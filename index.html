@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Fire Circle</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    .screen { position: absolute; inset: 0; }
+
+    /* ── HOME ────────────────────────────────────────────────────────── */
+    #home { background: #111; transition: opacity 0.8s ease; }
+    #home.fade-out { opacity: 0; pointer-events: none; }
+
+    #orbit-ring {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      border: 2px dashed #666;
+      border-radius: 50%;
+    }
+
+    #center {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: #2a2a2a;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #555;
+      cursor: pointer;
+      z-index: 2;
+    }
+    #fire-canvas {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    .avatar {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transform: translate(-50%, -50%);
+    }
+    .avatar-circle { background: #2a2a2a; border-radius: 50%; border: 2px solid #666; }
+    .avatar-label  { margin-top: 6px; color: #888; font-family: sans-serif; white-space: nowrap; }
+
+    .avatar-circle.me {
+      border: 2px solid rgba(255,200,80,.7);
+      box-shadow: 0 0 10px 4px rgba(255,160,40,.45), 0 0 22px 8px rgba(255,100,20,.2);
+      cursor: pointer;
+      animation: me-pulse 3s ease-in-out infinite;
+    }
+    @keyframes me-pulse {
+      0%, 100% { box-shadow: 0 0 10px 4px rgba(255,160,40,.45), 0 0 22px 8px rgba(255,100,20,.2); }
+      50%       { box-shadow: 0 0 16px 7px rgba(255,180,60,.65), 0 0 34px 14px rgba(255,120,30,.3); }
+    }
+
+    /* ── COMPASS OVERLAY ─────────────────────────────────────────────── */
+    #compass {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: rgba(5,2,0,.82);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      align-items: center;
+      justify-content: center;
+    }
+    #compass.open { display: flex; }
+
+    #compass-ring {
+      position: relative;
+      border-radius: 50%;
+      border: 1px solid rgba(176,112,64,.15);
+    }
+
+    .compass-point {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 7px;
+      transform: translate(-50%, -50%);
+      cursor: pointer;
+    }
+    .compass-point-circle {
+      border-radius: 50%;
+      background: rgba(40,18,4,.9);
+      border: 1px solid rgba(176,112,64,.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .compass-point:hover .compass-point-circle {
+      border-color: rgba(255,180,60,.6);
+      box-shadow: 0 0 14px 4px rgba(255,140,30,.25);
+    }
+    .compass-point-label {
+      color: #b07040;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    .compass-point-icon {
+      font-size: 22px;
+      line-height: 1;
+    }
+
+    /* Innerwork — heart center */
+    #compass-center {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      z-index: 2;
+    }
+    #compass-center-circle {
+      border-radius: 50%;
+      background: rgba(40,8,8,.95);
+      border: 1px solid rgba(220,80,80,.35);
+      box-shadow: 0 0 20px 6px rgba(200,50,50,.2), 0 0 50px 18px rgba(180,30,30,.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: box-shadow 0.2s;
+    }
+    #compass-center:hover #compass-center-circle {
+      box-shadow: 0 0 28px 10px rgba(220,60,60,.35), 0 0 60px 24px rgba(200,40,40,.2);
+    }
+    #compass-heart { color: #e05555; }
+
+    /* Dashed orbit ring — mirrors the home screen */
+    #compass-orbit {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      border: 1px dashed rgba(176,112,64,.22);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    /* Beating heart */
+    @keyframes heartbeat {
+      0%   { transform: scale(1);    }
+      14%  { transform: scale(1.18); }
+      28%  { transform: scale(1);    }
+      42%  { transform: scale(1.12); }
+      56%  { transform: scale(1);    }
+      100% { transform: scale(1);    }
+    }
+    #compass-heart {
+      display: inline-block;
+      animation: heartbeat 2.2s ease-in-out infinite;
+      transform-origin: center;
+    }
+
+    #compass-close {
+      position: absolute;
+      top: 28px; right: 28px;
+      color: rgba(176,112,64,.4);
+      font-size: 22px;
+      cursor: pointer;
+      line-height: 1;
+      z-index: 10;
+      transition: color 0.2s;
+    }
+    #compass-close:hover { color: rgba(176,112,64,.8); }
+
+    /* ── FLOATING FIRE (transition animation) ────────────────────────── */
+    #fire-float {
+      display: none;
+      position: fixed;
+      left: 0; top: 0;
+      z-index: 200;
+      pointer-events: none;
+      line-height: 1;
+    }
+
+    /* ── SKY ─────────────────────────────────────────────────────────── */
+    #sky {
+      background: radial-gradient(ellipse at 50% 0%,
+        #2d0e00 0%, #160618 35%, #07030f 70%, #020107 100%);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 1s ease;
+    }
+    #sky.visible { opacity: 1; pointer-events: all; }
+
+    #bg-stars, #milky-way, #constellation-svg {
+      position: absolute; inset: 0; pointer-events: none;
+    }
+    #sky-content { position: absolute; inset: 0; }
+
+    .bg-star {
+      position: absolute;
+      border-radius: 50%;
+      animation: twinkle var(--d) ease-in-out var(--delay) infinite;
+    }
+    @keyframes twinkle {
+      0%, 100% { opacity: var(--lo); }
+      50%       { opacity: var(--hi); }
+    }
+
+    .const-star {
+      position: absolute;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    /* North star — pulsing */
+    #north-star {
+      position: absolute;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: #ffdd88;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 8px 4px rgba(255,220,100,.7), 0 0 24px 10px rgba(255,170,50,.35);
+      animation: hpulse 2.5s ease-in-out infinite;
+      z-index: 10;
+      pointer-events: none;
+    }
+    @keyframes hpulse {
+      0%, 100% { box-shadow: 0 0 8px 4px rgba(255,220,100,.7), 0 0 24px 10px rgba(255,170,50,.35); }
+      50%       { box-shadow: 0 0 16px 8px rgba(255,220,100,.9), 0 0 44px 18px rgba(255,170,50,.55); }
+    }
+
+    /* Mission text — always visible under north star, editable */
+    #mission-text {
+      position: absolute;
+      text-align: center;
+      color: #c8904e;
+      font-size: clamp(13px, 2.8vw, 18px);
+      font-style: italic;
+      font-weight: 300;
+      line-height: 1.6;
+      transform: translateX(-50%);
+      width: min(320px, 80vw);
+      cursor: text;
+      outline: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s;
+      z-index: 10;
+    }
+    #mission-text:focus {
+      border-bottom: 1px solid rgba(176,112,64,.35);
+    }
+
+    /* Simple bright star for Events / Chat */
+    .sky-star {
+      position: absolute;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      cursor: pointer;
+      z-index: 10;
+      animation: hpulse 3s ease-in-out infinite;
+    }
+
+    .sky-label {
+      position: absolute;
+      text-align: center;
+      pointer-events: none;
+      color: #b07040;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      line-height: 1.5;
+      transform: translateX(-50%);
+    }
+
+    .tap-zone { position: absolute; cursor: pointer; }
+
+    /* ── PANEL ───────────────────────────────────────────────────────── */
+    #panel {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: linear-gradient(180deg, rgba(16,5,2,.97) 0%, rgba(8,2,1,.99) 100%);
+      border-top: 1px solid rgba(176,112,64,.2);
+      border-radius: 20px 20px 0 0;
+      padding: 14px 20px 36px;
+      z-index: 50;
+      transform: translateY(100%);
+      transition: transform 0.4s cubic-bezier(0.25,0.46,0.45,0.94);
+      max-height: 72vh;
+      overflow-y: auto;
+    }
+    #panel.open { transform: translateY(0); }
+
+    .panel-handle {
+      width: 36px; height: 4px;
+      background: rgba(176,112,64,.22);
+      border-radius: 2px;
+      margin: 0 auto 16px;
+    }
+    .panel-title {
+      color: #b07040;
+      font-size: 12px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 2px;
+    }
+    .panel-subtitle {
+      color: #4a2808;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    /* Mission */
+    .mission-text {
+      color: #d8a060;
+      font-size: 21px;
+      line-height: 1.7;
+      text-align: center;
+      padding: 10px 4px 20px;
+      font-style: italic;
+      font-weight: 300;
+    }
+
+    /* Events */
+    .event-item {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      padding: 13px 0;
+      border-bottom: 1px solid rgba(176,112,64,.1);
+    }
+    .event-day    { color: #b07040; font-size: 22px; font-weight: 300; line-height: 1; }
+    .event-month  { color: #4a2808; font-size: 10px; text-transform: uppercase; letter-spacing: .08em; }
+    .event-name   { color: #d8a060; font-size: 15px; margin-bottom: 3px; }
+    .event-detail { color: #5a3018; font-size: 12px; }
+
+    /* Chat */
+    #content-chat { display: flex; flex-direction: column; height: 52vh; }
+    #chat-messages { flex: 1; overflow-y: auto; padding-bottom: 8px; }
+    .chat-msg { margin-bottom: 10px; }
+    .chat-msg.sent { text-align: right; }
+    .chat-sender { color: #5a3018; font-size: 11px; margin-bottom: 3px; padding: 0 4px; }
+    .chat-bubble {
+      display: inline-block;
+      padding: 9px 13px;
+      font-size: 14px;
+      max-width: 78%;
+      line-height: 1.4;
+      color: #d8a060;
+    }
+    .chat-msg.received .chat-bubble {
+      background: rgba(176,112,64,.1);
+      border-radius: 4px 16px 16px 16px;
+    }
+    .chat-msg.sent .chat-bubble {
+      background: rgba(176,112,64,.2);
+      border-radius: 16px 4px 16px 16px;
+    }
+    #chat-input-row {
+      display: flex;
+      gap: 10px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(176,112,64,.1);
+      margin-top: 8px;
+    }
+    #chat-input {
+      flex: 1;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(176,112,64,.18);
+      border-radius: 20px;
+      padding: 10px 14px;
+      color: #d8a060;
+      font-size: 14px;
+      outline: none;
+    }
+    #chat-input::placeholder { color: #3a1e08; }
+    #chat-send {
+      width: 40px; height: 40px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      background: rgba(176,112,64,.18);
+      border: 1px solid rgba(176,112,64,.32);
+      color: #b07040;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Floating fire used only during screen transition -->
+<div id="fire-float"></div>
+
+<!-- HOME SCREEN -->
+<div id="home" class="screen">
+  <div id="orbit-ring"></div>
+  <div id="center"></div>
+  <div id="avatars"></div>
+</div>
+
+<!-- SKY SCREEN -->
+<div id="sky" class="screen">
+  <div id="bg-stars"></div>
+  <canvas id="milky-way"></canvas>
+  <svg id="constellation-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+  <div id="sky-content"></div>
+  <div id="panel">
+    <div class="panel-handle"></div>
+    <div id="panel-inner"></div>
+  </div>
+</div>
+
+<!-- COMPASS OVERLAY -->
+<div id="compass">
+  <div id="compass-close">✕</div>
+  <div style="position:absolute;top:28px;left:0;right:0;text-align:center;color:rgba(176,112,64,.4);font-size:11px;letter-spacing:.18em;text-transform:uppercase;pointer-events:none;">My Circles</div>
+  <div id="compass-ring">
+    <div id="compass-orbit"></div>
+    <div id="compass-center">
+      <div id="compass-center-circle">
+        <span id="compass-heart" class="compass-point-icon">♥</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── DATA ──────────────────────────────────────────────────────────────
+  const USERS = ['Snoopy', 'User 2', 'User 3', 'User 4', 'User 5', 'User 6'];
+
+  // Star positions as [x%, y%] of viewport
+  const MAKALII_STARS = [
+    [21, 53], [25, 52], [19, 57], [23, 57], [27, 56], [21, 61], [25, 60]
+  ];
+
+  const EVENTS = [
+    { day: '12', month: 'Apr', name: 'Sunrise Ceremony',    detail: 'Diamond Head · 6:00am'      },
+    { day: '18', month: 'Apr', name: 'Community Potluck',   detail: 'Kailua Beach Park · 5:00pm' },
+    { day: '26', month: 'Apr', name: 'Story Circle',         detail: 'Mānoa Valley · 7:00pm'      },
+    { day: '3',  month: 'May', name: 'Full Moon Gathering', detail: 'North Shore · Sunset'        },
+  ];
+
+  const SEED_CHAT = [
+    { name: 'Kaimana', text: 'Aloha everyone 🌺',                      sent: false },
+    { name: 'Leilani', text: 'So excited for the sunrise ceremony!', sent: false },
+    { name: 'You',     text: "Me too! Who's bringing flowers?",       sent: true  },
+    { name: 'Kaimana', text: "I'll bring the pikake 🌸",              sent: false },
+  ];
+
+  // ── HELPERS ───────────────────────────────────────────────────────────
+  function pct(x, y) { return [innerWidth * x / 100, innerHeight * y / 100]; }
+
+  function svgLine(svg, x1, y1, x2, y2, color, w = 0.8) {
+    const el = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    el.setAttribute('x1', x1); el.setAttribute('y1', y1);
+    el.setAttribute('x2', x2); el.setAttribute('y2', y2);
+    el.setAttribute('stroke', color);
+    el.setAttribute('stroke-width', w);
+    svg.appendChild(el);
+  }
+
+  function makeStar(x, y, size, bg, shadow) {
+    const el = document.createElement('div');
+    el.className = 'const-star';
+    el.style.cssText = `left:${x}px;top:${y}px;width:${size}px;height:${size}px;background:${bg};box-shadow:${shadow};`;
+    return el;
+  }
+
+  function makeLabel(x, y, html, extra = '') {
+    const el = document.createElement('div');
+    el.className = 'sky-label';
+    el.style.cssText = `left:${x}px;top:${y}px;${extra}`;
+    el.innerHTML = html;
+    return el;
+  }
+
+  function makeTapZone(x, y, w, h, onClick, circle = false) {
+    const el = document.createElement('div');
+    el.className = 'tap-zone';
+    el.style.cssText = `left:${x}px;top:${y}px;width:${w}px;height:${h}px;`
+      + (circle ? 'transform:translate(-50%,-50%);border-radius:50%;' : '');
+    el.onclick = onClick;
+    return el;
+  }
+
+  // ── HOME LAYOUT ───────────────────────────────────────────────────────
+  function layout() {
+    const vmin     = Math.min(innerWidth, innerHeight);
+    const ringDiam = vmin * 2 / 3;
+    const ringR    = ringDiam / 2;
+    const aSize    = ringDiam / 6;
+    const fSize    = Math.max(10, aSize * 0.28);
+    const cx = innerWidth / 2, cy = innerHeight / 2;
+
+    const ring = document.getElementById('orbit-ring');
+    ring.style.width = ring.style.height = ringDiam + 'px';
+
+    const center = document.getElementById('center');
+    const cs = aSize * 1.5;
+    center.style.width = center.style.height = cs + 'px';
+    center.onclick = transitionToSky;
+    initFireCanvas(Math.round(cs));
+
+    const container = document.getElementById('avatars');
+    container.innerHTML = '';
+    USERS.forEach((name, i) => {
+      const angle = -Math.PI / 2 + (2 * Math.PI / USERS.length) * i;
+      const x = cx + ringR * Math.cos(angle), y = cy + ringR * Math.sin(angle);
+      const wrap = document.createElement('div');
+      wrap.className = 'avatar';
+      wrap.style.left = x + 'px'; wrap.style.top = y + 'px';
+      const circle = document.createElement('div');
+      circle.className = 'avatar-circle';
+      circle.style.width = circle.style.height = aSize + 'px';
+      circle.style.overflow = 'hidden';
+      circle.style.display = 'flex';
+      circle.style.alignItems = 'center';
+      circle.style.justifyContent = 'center';
+      if (i === 0) {
+        circle.classList.add('me');
+        circle.onclick = e => { e.stopPropagation(); openCompass(); };
+        // Snoopy — white dog with brown ears
+        const s = aSize;
+        circle.innerHTML = `<svg width="${s}" height="${s}" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <!-- left ear -->
+          <ellipse cx="28" cy="38" rx="18" ry="26" fill="#8B5E3C" transform="rotate(-15 28 38)"/>
+          <!-- right ear -->
+          <ellipse cx="72" cy="38" rx="18" ry="26" fill="#8B5E3C" transform="rotate(15 72 38)"/>
+          <!-- head -->
+          <circle cx="50" cy="54" r="34" fill="#f5f5f0"/>
+          <!-- eyes -->
+          <circle cx="40" cy="48" r="4" fill="#222"/>
+          <circle cx="60" cy="48" r="4" fill="#222"/>
+          <!-- nose -->
+          <ellipse cx="50" cy="63" rx="7" ry="5" fill="#222"/>
+        </svg>`;
+      }
+      const label = document.createElement('div');
+      label.className = 'avatar-label';
+      label.style.fontSize = fSize + 'px';
+      label.textContent = name;
+      wrap.appendChild(circle); wrap.appendChild(label);
+      container.appendChild(wrap);
+    });
+  }
+
+  // ── SKY SETUP ─────────────────────────────────────────────────────────
+  function setupSky() {
+    generateBgStars();
+    drawMilkyWay();
+    drawConstellations();
+  }
+
+  function generateBgStars() {
+    const container = document.getElementById('bg-stars');
+    container.innerHTML = '';
+    const colors = ['#fff8e7', '#ffd580', '#ffb347', '#ffe4a0'];
+    for (let i = 0; i < 180; i++) {
+      const s = document.createElement('div');
+      s.className = 'bg-star';
+      const size = Math.random() < 0.7 ? 1 : Math.random() < 0.7 ? 2 : 3;
+      s.style.cssText = [
+        `width:${size}px`, `height:${size}px`,
+        `left:${Math.random() * 100}%`, `top:${Math.random() * 100}%`,
+        `background:${colors[Math.floor(Math.random() * colors.length)]}`,
+        `--d:${(2 + Math.random() * 4).toFixed(1)}s`,
+        `--delay:-${(Math.random() * 4).toFixed(1)}s`,
+        `--lo:${(0.08 + Math.random() * 0.2).toFixed(2)}`,
+        `--hi:${(0.5  + Math.random() * 0.5).toFixed(2)}`,
+      ].join(';');
+      container.appendChild(s);
+    }
+  }
+
+  function drawMilkyWay() {
+    const canvas = document.getElementById('milky-way');
+    canvas.width = innerWidth; canvas.height = innerHeight;
+    const ctx = canvas.getContext('2d');
+    const w = innerWidth, h = innerHeight;
+
+    // Band flows from bottom-left to upper-right
+    const x1 = 0, y1 = h * 0.78, x2 = w, y2 = h * 0.22;
+    const angle = Math.atan2(y2 - y1, x2 - x1);
+    const perpX = Math.cos(angle + Math.PI / 2);
+    const perpY = Math.sin(angle + Math.PI / 2);
+    const bw  = Math.min(w, h) * 0.14;
+    const mx  = (x1 + x2) / 2, my = (y1 + y2) / 2;
+
+    const grad = ctx.createLinearGradient(
+      mx + perpX * bw, my + perpY * bw,
+      mx - perpX * bw, my - perpY * bw
+    );
+    grad.addColorStop(0,   'rgba(255,120,30,0)');
+    grad.addColorStop(0.3, 'rgba(255,110,30,.028)');
+    grad.addColorStop(0.5, 'rgba(255,155,55,.065)');
+    grad.addColorStop(0.7, 'rgba(255,110,30,.028)');
+    grad.addColorStop(1,   'rgba(255,120,30,0)');
+
+    const len = Math.hypot(x2 - x1, y2 - y1) * 1.1;
+    ctx.save();
+    ctx.translate(mx, my); ctx.rotate(angle);
+    ctx.fillStyle = grad;
+    ctx.fillRect(-len / 2, -bw, len, bw * 2);
+    ctx.restore();
+
+    // Scatter tiny stars through the band
+    for (let i = 0; i < 140; i++) {
+      const t  = Math.random();
+      const cx = x1 + (x2 - x1) * t, cy = y1 + (y2 - y1) * t;
+      const sp = (Math.random() - 0.5) * bw * 1.4;
+      ctx.beginPath();
+      ctx.arc(cx + perpX * sp, cy + perpY * sp, Math.random() < 0.8 ? 0.8 : 1.4, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,${(180 + Math.random() * 60) | 0},80,${(0.1 + Math.random() * 0.5).toFixed(2)})`;
+      ctx.fill();
+    }
+  }
+
+  function drawConstellations() {
+    const svg     = document.getElementById('constellation-svg');
+    const content = document.getElementById('sky-content');
+    svg.setAttribute('width', innerWidth);
+    svg.setAttribute('height', innerHeight);
+    svg.innerHTML = ''; content.innerHTML = '';
+
+    // ── North Star + mission text (top center) ────────────────────────
+    const [hx, hy] = pct(50, 9);
+
+    // Eight radiating rays
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      svgLine(svg,
+        hx + Math.cos(a) * 10, hy + Math.sin(a) * 10,
+        hx + Math.cos(a) * 26, hy + Math.sin(a) * 26,
+        'rgba(255,215,90,.25)', 0.7);
+    }
+    const northStar = document.createElement('div');
+    northStar.id = 'north-star';
+    northStar.style.left = hx + 'px';
+    northStar.style.top  = hy + 'px';
+    content.appendChild(northStar);
+
+    const mission = document.createElement('div');
+    mission.id = 'mission-text';
+    mission.contentEditable = 'true';
+    mission.style.left = hx + 'px';
+    mission.style.top  = (hy + 22) + 'px';
+    mission.textContent = 'Healing the world by building community';
+    // Stop sky-click-to-close from firing while editing
+    mission.addEventListener('click', e => e.stopPropagation());
+    content.appendChild(mission);
+
+    // ── Home — fire circle constellation (lower left) ─────────────────
+    const mPts = MAKALII_STARS.map(([x, y]) => pct(x, y));
+    const mAllX = mPts.map(pt => pt[0]), mAllY = mPts.map(pt => pt[1]);
+    const mCX   = (Math.min(...mAllX) + Math.max(...mAllX)) / 2;
+    const mCY   = (Math.min(...mAllY) + Math.max(...mAllY)) / 2;
+    const mMaxY = Math.max(...mAllY);
+
+    // Sort stars by angle around centroid so connections form a clean ring
+    const sorted = [...mPts].sort((a, b) =>
+      Math.atan2(a[1] - mCY, a[0] - mCX) - Math.atan2(b[1] - mCY, b[0] - mCX)
+    );
+    sorted.forEach((pt, i) => {
+      const next = sorted[(i + 1) % sorted.length];
+      svgLine(svg, pt[0], pt[1], next[0], next[1], 'rgba(255,185,75,.22)');
+    });
+
+    // Draw dashed circle around the cluster
+    const circR = Math.max(
+      Math.max(...mAllX) - Math.min(...mAllX),
+      Math.max(...mAllY) - Math.min(...mAllY)
+    ) / 2 + 18;
+    const circ = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circ.setAttribute('cx', mCX); circ.setAttribute('cy', mCY); circ.setAttribute('r', circR);
+    circ.setAttribute('fill', 'none');
+    circ.setAttribute('stroke', 'rgba(255,185,75,.18)');
+    circ.setAttribute('stroke-width', '1');
+    circ.setAttribute('stroke-dasharray', '4 5');
+    svg.appendChild(circ);
+
+    // Draw stars
+    mPts.forEach((pt, i) => {
+      content.appendChild(makeStar(pt[0], pt[1],
+        i === 3 ? 5 : 3, '#ffd580',
+        i === 3 ? '0 0 5px 2px rgba(255,195,75,.6)' : '0 0 3px 1px rgba(255,195,75,.35)'));
+    });
+
+    // Tap zone covers the whole circle
+    content.appendChild(makeTapZone(mCX, mCY, circR * 2, circR * 2, () => transitionToHome(), true));
+    content.appendChild(makeLabel(mCX, mMaxY + circR - (mCY - Math.min(...mAllY)) + 14, 'Home'));
+
+    // ── Events — single bright star (right side) ──────────────────────
+    const [ex, ey] = pct(75, 38);
+    const evStar = document.createElement('div');
+    evStar.className = 'sky-star';
+    evStar.style.cssText = `left:${ex}px;top:${ey}px;width:10px;height:10px;`
+      + `background:#ffb347;box-shadow:0 0 7px 3px rgba(255,145,45,.7),0 0 20px 8px rgba(255,145,45,.3);`
+      + `animation-delay:-1s;`;
+    evStar.onclick = e => { e.stopPropagation(); openPanel('events'); };
+    content.appendChild(evStar);
+    content.appendChild(makeLabel(ex, ey + 16, 'Events'));
+
+    // ── Chat — single bright star (lower right) ───────────────────────
+    const [cx2, cy2] = pct(68, 62);
+    const chatStar = document.createElement('div');
+    chatStar.className = 'sky-star';
+    chatStar.style.cssText = `left:${cx2}px;top:${cy2}px;width:10px;height:10px;`
+      + `background:#ffd580;box-shadow:0 0 7px 3px rgba(255,210,100,.7),0 0 20px 8px rgba(255,210,100,.3);`
+      + `animation-delay:-2.2s;`;
+    chatStar.onclick = e => { e.stopPropagation(); openPanel('chat'); };
+    content.appendChild(chatStar);
+    content.appendChild(makeLabel(cx2, cy2 + 16, 'Chat'));
+
+    // ── Resources — single bright star (lower left) ───────────────────
+    const [rx, ry] = pct(32, 68);
+    const resStar = document.createElement('div');
+    resStar.className = 'sky-star';
+    resStar.style.cssText = `left:${rx}px;top:${ry}px;width:10px;height:10px;`
+      + `background:#c8d8ff;box-shadow:0 0 7px 3px rgba(180,200,255,.7),0 0 20px 8px rgba(180,200,255,.3);`
+      + `animation-delay:-3.1s;`;
+    resStar.onclick = e => { e.stopPropagation(); openPanel('resources'); };
+    content.appendChild(resStar);
+    content.appendChild(makeLabel(rx, ry + 16, 'Resources'));
+  }
+
+  // ── TRANSITIONS ───────────────────────────────────────────────────────
+  function transitionToSky() {
+    const center = document.getElementById('center');
+    const rect   = center.getBoundingClientRect();
+    const startX = rect.left + rect.width  / 2;
+    const startY = rect.top  + rect.height / 2;
+    const sz     = rect.width;
+    const [tx, ty] = pct(50, 9);
+
+    // Use a glowing amber orb to represent the fire during flight
+    const ff = document.getElementById('fire-float');
+    ff.innerHTML = '';
+    ff.style.cssText = `
+      display:block;position:fixed;left:0;top:0;z-index:200;
+      pointer-events:none;
+      width:${sz}px;height:${sz}px;border-radius:50%;
+      background:radial-gradient(circle, rgba(255,220,100,1) 8%, rgba(255,120,20,.85) 45%, rgba(255,50,0,0) 100%);
+      box-shadow:0 0 ${sz*.35}px ${sz*.12}px rgba(255,110,20,.65);
+      transform:translate(${startX}px,${startY}px) translate(-50%,-50%) scale(1);
+      transition:none;
+    `;
+
+    center.style.opacity = '0';
+    document.getElementById('fire-canvas').style.opacity = '0';
+    ff.getBoundingClientRect();
+
+    ff.style.transition = 'transform 1.4s cubic-bezier(0.4,0,0.2,1), width 1.3s ease, height 1.3s ease, box-shadow 1.2s ease, opacity 0.4s ease 1s';
+    ff.style.transform  = `translate(${tx}px,${ty}px) translate(-50%,-50%) scale(0.07)`;
+    ff.style.boxShadow  = `0 0 ${sz*.6}px ${sz*.2}px rgba(255,200,80,.9)`;
+    ff.style.opacity    = '0';
+
+    setTimeout(() => {
+      document.getElementById('sky').classList.add('visible');
+      document.getElementById('home').classList.add('fade-out');
+    }, 850);
+
+    setTimeout(() => {
+      ff.style.display = 'none';
+      center.style.opacity = '';
+      document.getElementById('fire-canvas').style.opacity = '';
+    }, 1700);
+  }
+
+  function transitionToHome() {
+    closePanel();
+
+    const center = document.getElementById('center');
+    const rect   = center.getBoundingClientRect();
+    const endX   = rect.left + rect.width  / 2;
+    const endY   = rect.top  + rect.height / 2;
+    const sz     = rect.width;
+    const [sx, sy] = pct(50, 9);
+
+    const ff = document.getElementById('fire-float');
+    ff.innerHTML = '';
+    ff.style.cssText = `
+      display:block;position:fixed;left:0;top:0;z-index:200;
+      pointer-events:none;
+      width:${sz}px;height:${sz}px;border-radius:50%;
+      background:radial-gradient(circle, rgba(255,220,100,1) 8%, rgba(255,120,20,.85) 45%, rgba(255,50,0,0) 100%);
+      box-shadow:0 0 ${sz*.6}px ${sz*.2}px rgba(255,200,80,.9);
+      opacity:0;
+      transform:translate(${sx}px,${sy}px) translate(-50%,-50%) scale(0.07);
+      transition:none;
+    `;
+
+    center.style.opacity = '0';
+    document.getElementById('fire-canvas').style.opacity = '0';
+    ff.getBoundingClientRect();
+
+    ff.style.transition = 'transform 1.3s cubic-bezier(0.4,0,0.2,1), box-shadow 1.1s ease, opacity 0.3s ease';
+    ff.style.transform  = `translate(${endX}px,${endY}px) translate(-50%,-50%) scale(1)`;
+    ff.style.boxShadow  = `0 0 ${sz*.35}px ${sz*.12}px rgba(255,110,20,.65)`;
+    ff.style.opacity    = '1';
+
+    setTimeout(() => {
+      document.getElementById('sky').classList.remove('visible');
+      document.getElementById('home').classList.remove('fade-out');
+    }, 750);
+
+    setTimeout(() => {
+      ff.style.display = 'none';
+      center.style.opacity = '';
+      document.getElementById('fire-canvas').style.opacity = '';
+    }, 1400);
+  }
+
+  // ── PANEL ─────────────────────────────────────────────────────────────
+  function openPanel(type) {
+    const inner = document.getElementById('panel-inner');
+
+    if (type === 'resources') {
+      inner.innerHTML = `
+        <div class="panel-title">Resources</div>
+        <div class="panel-subtitle">Hāmākua Circle</div>
+        ${[
+          { title: 'Community Guidelines',    desc: 'How we live and relate to one another'       },
+          { title: 'Land Stewardship Guide',  desc: 'Practices for tending the Sanctuary'         },
+          { title: 'Daily Rhythm',            desc: 'Morning practice, meals, and evening circle' },
+          { title: 'Reflection Prompts',      desc: 'Questions for deepening your experience'     },
+          { title: 'ʻĀina Map',               desc: 'The land, zones, and sacred sites'           },
+        ].map(r => `
+          <div class="event-item" style="cursor:pointer;">
+            <div style="flex:1;">
+              <div class="event-name">${r.title}</div>
+              <div class="event-detail">${r.desc}</div>
+            </div>
+            <div style="color:rgba(176,112,64,.35);font-size:18px;align-self:center;">›</div>
+          </div>`).join('')}
+      `;
+
+    } else if (type === 'events') {
+      inner.innerHTML = `
+        <div class="panel-title">Upcoming Gatherings</div>
+        ${EVENTS.map(e => `
+          <div class="event-item">
+            <div>
+              <div class="event-day">${e.day}</div>
+              <div class="event-month">${e.month}</div>
+            </div>
+            <div>
+              <div class="event-name">${e.name}</div>
+              <div class="event-detail">${e.detail}</div>
+            </div>
+          </div>`).join('')}
+      `;
+
+    } else if (type === 'chat') {
+      inner.innerHTML = `
+        <div class="panel-title">Circle Chat</div>
+        <div id="content-chat">
+          <div id="chat-messages">
+            ${SEED_CHAT.map(m => `
+              <div class="chat-msg ${m.sent ? 'sent' : 'received'}">
+                ${!m.sent ? `<div class="chat-sender">${m.name}</div>` : ''}
+                <div class="chat-bubble">${m.text}</div>
+              </div>`).join('')}
+          </div>
+          <div id="chat-input-row">
+            <input id="chat-input" type="text" placeholder="Share with the circle…">
+            <button id="chat-send">→</button>
+          </div>
+        </div>
+      `;
+      document.getElementById('chat-send').addEventListener('click', sendChat);
+      document.getElementById('chat-input').addEventListener('keydown', e => {
+        if (e.key === 'Enter') sendChat();
+      });
+    }
+
+    document.getElementById('panel').classList.add('open');
+  }
+
+  function sendChat() {
+    const input = document.getElementById('chat-input');
+    const text  = input.value.trim();
+    if (!text) return;
+    const msgs  = document.getElementById('chat-messages');
+    const div   = document.createElement('div');
+    div.className = 'chat-msg sent';
+    const bubble = document.createElement('div');
+    bubble.className = 'chat-bubble';
+    bubble.textContent = text; // textContent prevents XSS
+    div.appendChild(bubble);
+    msgs.appendChild(div);
+    input.value = '';
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function closePanel() { document.getElementById('panel').classList.remove('open'); }
+
+  // Clicks inside the panel don't bubble up and close it
+  document.getElementById('panel').addEventListener('click', e => e.stopPropagation());
+  // Clicking the sky background closes any open panel
+  document.getElementById('sky').addEventListener('click', () => {
+    if (document.getElementById('panel').classList.contains('open')) closePanel();
+  });
+
+  // ── FIRE CANVAS ───────────────────────────────────────────────────────
+  let fireRAF = null;
+  let sparks  = [];
+
+  function initFireCanvas(fireSize) {
+    // Canvas is 3× the fire circle so sparks can escape the clipping area
+    const sz = Math.round(fireSize * 3);
+    let canvas = document.getElementById('fire-canvas');
+    if (!canvas) {
+      canvas = document.createElement('canvas');
+      canvas.id = 'fire-canvas';
+      document.getElementById('home').appendChild(canvas);
+    }
+    // Clear any old content from #center (previous emoji / canvas)
+    const center = document.getElementById('center');
+    center.innerHTML = '';
+
+    canvas.width = canvas.height = sz;
+    canvas.style.width = canvas.style.height = sz + 'px';
+
+    sparks = [];
+    if (fireRAF) cancelAnimationFrame(fireRAF);
+    animateFire(canvas, fireSize);
+  }
+
+  function animateFire(canvas, fireSize) {
+    const ctx = canvas.getContext('2d');
+    const sz  = canvas.width;
+    const cx  = sz / 2;   // canvas centre (= fire centre)
+    const cy  = sz / 2;
+    const r   = fireSize / 2;
+
+    // ── Turbulence helper: sum of sines at irrational frequency ratios ──
+    // Slower frequencies = more natural, less frantic flame motion
+    function turb(t, seed) {
+      return Math.sin(t * 0.97 + seed)        * 1.000
+           + Math.sin(t * 1.73 + seed * 1.31) * 0.500
+           + Math.sin(t * 2.41 + seed * 0.74) * 0.250
+           + Math.sin(t * 3.67 + seed * 1.87) * 0.125
+           + Math.sin(t * 5.03 + seed * 2.39) * 0.062;
+    }
+
+    // ── Rounded rect fallback (ctx.roundRect not in all Edge versions) ──
+    function roundedRect(x, y, w, h, rad) {
+      ctx.beginPath();
+      ctx.moveTo(x + rad, y);
+      ctx.lineTo(x + w - rad, y);
+      ctx.arcTo(x + w, y,     x + w, y + h, rad);
+      ctx.lineTo(x + w, y + h - rad);
+      ctx.arcTo(x + w, y + h, x,     y + h, rad);
+      ctx.lineTo(x + rad, y + h);
+      ctx.arcTo(x,     y + h, x,     y,     rad);
+      ctx.lineTo(x, y + rad);
+      ctx.arcTo(x,     y,     x + w, y,     rad);
+      ctx.closePath();
+    }
+
+    function spawnSpark(wind) {
+      const spread = (Math.random() - 0.5) * r * 0.55;
+      const speed  = 1.4 + Math.random() * 2.8;
+      const angle  = -Math.PI / 2 + (Math.random() - 0.5) * 0.9;
+      return {
+        x:     cx + spread,
+        y:     cy - r * 0.05,
+        vx:    Math.cos(angle) * speed + wind * 0.5,
+        vy:    Math.sin(angle) * speed,
+        life:  1,
+        decay: 0.007 + Math.random() * 0.016,
+        rad:   0.7 + Math.random() * 1.8,
+        hue:   12 + Math.random() * 38,
+      };
+    }
+
+    function drawFlame(t, offX, width, height, colors, seed, wind) {
+      // Each height level gets independent turbulence — flame bends more at the tip
+      const wobBase = turb(t, seed)        * r * 0.04;
+      const wobMid  = turb(t, seed + 1.57) * r * 0.07;
+      const wobTip  = turb(t, seed + 3.14) * r * 0.10;
+
+      // Wind pushes tip more than base (natural drafting effect)
+      const wBase = wind * r * 0.03;
+      const wMid  = wind * r * 0.08;
+      const wTip  = wind * r * 0.18;
+
+      const baseY = cy + r * 0.42;
+      const tipY  = baseY - height;
+      const tipX  = cx + offX + wobTip + wTip;
+      const midY  = baseY - height * 0.55;
+      const midX  = cx + offX + wobMid + wMid;
+      const lx    = cx - width + offX + wobBase + wBase;
+      const rx    = cx + width + offX + wobBase + wBase;
+
+      ctx.beginPath();
+      ctx.moveTo(lx, baseY);
+      ctx.quadraticCurveTo(midX - width * 0.55, midY, tipX, tipY);
+      ctx.quadraticCurveTo(midX + width * 0.55, midY, rx,   baseY);
+      ctx.closePath();
+
+      const grad = ctx.createLinearGradient(cx + offX, baseY, tipX, tipY);
+      colors.forEach(([stop, col]) => grad.addColorStop(stop, col));
+      ctx.fillStyle = grad;
+      ctx.fill();
+    }
+
+    function drawFrame() {
+      try {
+      ctx.clearRect(0, 0, sz, sz);
+      const t = performance.now() / 1000;
+
+      // Wind: slow atmospheric drift with occasional unpredictable gusts
+      const wind = Math.sin(t * 0.29) * 0.45
+                 + Math.sin(t * 0.71) * 0.25
+                 + Math.sin(t * 1.13) * 0.12
+                 + turb(t, 77) * 0.08;
+
+      // ── Clip circle for fire body ──────────────────────────────────
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.clip();
+
+      // Logs
+      const logY = cy + r * 0.52, logH = r * 0.18;
+      ctx.save();
+      ctx.translate(cx - r * 0.13, logY); ctx.rotate(-0.35);
+      const lg1 = ctx.createLinearGradient(0, -logH/2, 0, logH/2);
+      lg1.addColorStop(0, '#5c3010'); lg1.addColorStop(1, '#2a1206');
+      ctx.fillStyle = lg1;
+      roundedRect(-r * 0.38, -logH/2, r * 0.76, logH, 4); ctx.fill();
+      ctx.restore();
+      ctx.save();
+      ctx.translate(cx + r * 0.13, logY); ctx.rotate(0.35);
+      const lg2 = ctx.createLinearGradient(0, -logH/2, 0, logH/2);
+      lg2.addColorStop(0, '#4e2a0e'); lg2.addColorStop(1, '#1e0d04');
+      ctx.fillStyle = lg2;
+      roundedRect(-r * 0.38, -logH/2, r * 0.76, logH, 4); ctx.fill();
+      ctx.restore();
+
+      // Ember glow — pulses with the turbulence
+      const eg = ctx.createRadialGradient(cx, logY - logH * 0.3, 0, cx, logY, r * 0.5);
+      const ep = 0.38 + 0.14 * Math.sin(t * 3.1 + turb(t, 5) * 0.5);
+      eg.addColorStop(0, `rgba(255,130,10,${ep})`);
+      eg.addColorStop(1, 'rgba(255,50,0,0)');
+      ctx.fillStyle = eg;
+      ctx.beginPath(); ctx.ellipse(cx, logY, r * 0.5, r * 0.26, 0, 0, Math.PI * 2); ctx.fill();
+
+      // Flames — back to front, wide to narrow
+      // Outer body (dark red-orange)
+      drawFlame(t, 0,      r*.30, r*1.18, [[0,'rgba(155,25,0,.9)'],[.55,'rgba(205,60,0,.55)'],[1,'rgba(255,130,0,0)']], 0.0,  wind);
+      drawFlame(t,-r*.09,  r*.22, r*.96,  [[0,'rgba(170,30,0,.8)'],[.60,'rgba(215,70,0,.45)'],[1,'rgba(255,150,0,0)']], 1.73, wind);
+      drawFlame(t, r*.08,  r*.20, r*.90,  [[0,'rgba(160,28,0,.75)'],[.65,'rgba(210,65,0,.40)'],[1,'rgba(255,145,0,0)']], 3.07, wind);
+      // Mid flame (bright orange)
+      drawFlame(t, 0,      r*.20, r*.90,  [[0,'rgba(255,85,0,.95)'],[.50,'rgba(255,148,0,.7)'],[1,'rgba(255,220,50,0)']], 0.5,  wind);
+      drawFlame(t,-r*.05,  r*.15, r*.74,  [[0,'rgba(255,95,0,.85)'],[.55,'rgba(255,158,10,.6)'],[1,'rgba(255,230,55,0)']], 2.41, wind);
+      drawFlame(t, r*.06,  r*.13, r*.68,  [[0,'rgba(255,90,0,.80)'],[.55,'rgba(255,152,8,.55)'],[1,'rgba(255,228,52,0)']], 4.20, wind);
+      // Inner hot core (yellow-white)
+      drawFlame(t, 0,      r*.11, r*.60,  [[0,'rgba(255,235,120,1)'],[.40,'rgba(255,185,45,.85)'],[1,'rgba(255,255,180,0)']], 1.1, wind);
+      drawFlame(t, 0,      r*.06, r*.38,  [[0,'rgba(255,255,210,1)'],[.50,'rgba(255,225,110,.65)'],[1,'rgba(255,255,255,0)']], 2.8, wind);
+
+      ctx.restore(); // end fire-body clip
+
+      // Soft outer glow (bleeds beyond the circle — no clip active here)
+      const glow = ctx.createRadialGradient(cx, cy + r * 0.12, r * 0.25, cx, cy, r * 1.55);
+      glow.addColorStop(0,   'rgba(255,100,20,0)');
+      glow.addColorStop(0.5, `rgba(255,75,10,${0.055 + 0.025 * Math.sin(t * 2.1)})`);
+      glow.addColorStop(1,   'rgba(255,30,0,0)');
+      ctx.fillStyle = glow;
+      ctx.beginPath(); ctx.arc(cx, cy, r * 1.55, 0, Math.PI * 2); ctx.fill();
+
+      // ── Sparks — live on the large canvas, fly freely ──────────────
+      if (Math.random() < 0.55) sparks.push(spawnSpark(wind));
+      // Occasional burst
+      if (Math.random() < 0.04) {
+        for (let i = 0; i < 3; i++) sparks.push(spawnSpark(wind));
+      }
+
+      sparks = sparks.filter(s => s.life > 0);
+      sparks.forEach(s => {
+        s.x    += s.vx;
+        s.y    += s.vy;
+        s.vy   -= 0.055;   // buoyancy — hot sparks rise
+        s.vx   += wind * 0.03;  // wind drift accumulates
+        s.vx   *= 0.975;
+        s.vy   *= 0.985;
+        s.life -= s.decay;
+
+        const a = Math.pow(Math.max(s.life, 0), 1.4);
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.rad * s.life, 0, Math.PI * 2);
+        ctx.fillStyle = `hsla(${s.hue},100%,72%,${a})`;
+        ctx.fill();
+
+        // trailing streak
+        if (s.life > 0.45) {
+          ctx.beginPath();
+          ctx.moveTo(s.x, s.y);
+          ctx.lineTo(s.x - s.vx * 3, s.y - s.vy * 3);
+          ctx.strokeStyle = `hsla(${s.hue + 12},100%,82%,${a * 0.38})`;
+          ctx.lineWidth = s.rad * s.life * 0.65;
+          ctx.stroke();
+        }
+      });
+
+      } catch(e) { console.error('fire draw error:', e); }
+      fireRAF = requestAnimationFrame(drawFrame);
+    }
+
+    drawFrame();
+  }
+
+  // ── COMPASS ───────────────────────────────────────────────────────────
+  // Circles the user belongs to — first entry is always the current/active circle
+  const MY_CIRCLES = [
+    { label: 'Hāmākua',      icon: '🌋' },
+    { label: 'ʻOhana',       icon: '🌺' },
+    { label: 'Land Keepers', icon: '🌿' },
+    { label: '+ Create',     icon: '✦',  create: true },
+  ];
+
+  function buildCompass() {
+    const vmin    = Math.min(innerWidth, innerHeight);
+    const ringD   = vmin * 0.72;
+    const ringR   = ringD / 2;
+    const ptSize  = vmin * 0.14;
+    const ctrSize = vmin * 0.20;
+    const lblSize = Math.max(9, vmin * 0.024);
+
+    const ring = document.getElementById('compass-ring');
+    ring.style.width = ring.style.height = ringD + 'px';
+
+    // Orbit ring mirrors home dashed ring
+    const orbit = document.getElementById('compass-orbit');
+    orbit.style.width = orbit.style.height = ringD * 0.86 + 'px';
+
+    // Size the heart center
+    const ctr = document.getElementById('compass-center-circle');
+    ctr.style.width  = ctr.style.height = ctrSize + 'px';
+    document.getElementById('compass-heart').style.fontSize = (ctrSize * 0.45) + 'px';
+
+    // Remove old circle points
+    ring.querySelectorAll('.compass-point').forEach(el => el.remove());
+
+    // Evenly space circles around the ring — same math as home layout()
+    MY_CIRCLES.forEach((pt, i) => {
+      const angle = -Math.PI / 2 + (2 * Math.PI / MY_CIRCLES.length) * i;
+      const px    = ringR + Math.cos(angle) * ringR * 0.86;
+      const py    = ringR + Math.sin(angle) * ringR * 0.86;
+
+      const wrap = document.createElement('div');
+      wrap.className = 'compass-point';
+      wrap.style.left = px + 'px';
+      wrap.style.top  = py + 'px';
+
+      const circ = document.createElement('div');
+      circ.className = 'compass-point-circle';
+      circ.style.width = circ.style.height = ptSize + 'px';
+
+      if (pt.create) {
+        circ.style.borderStyle = 'dashed';
+        circ.style.borderColor = 'rgba(176,112,64,.5)';
+        circ.style.background  = 'rgba(40,18,4,.6)';
+      }
+
+      const icon = document.createElement('span');
+      icon.className      = 'compass-point-icon';
+      icon.style.fontSize = (ptSize * 0.38) + 'px';
+      icon.textContent    = pt.icon;
+
+      const lbl = document.createElement('div');
+      lbl.className      = 'compass-point-label';
+      lbl.style.fontSize = lblSize + 'px';
+      lbl.textContent    = pt.label;
+
+      circ.appendChild(icon);
+      wrap.appendChild(circ);
+      wrap.appendChild(lbl);
+
+      // Clicking a circle navigates to it and closes the overlay
+      if (!pt.create) {
+        wrap.onclick = () => { closeCompass(); };
+      }
+
+      ring.appendChild(wrap);
+    });
+  }
+
+  function openCompass()  {
+    buildCompass();
+    document.getElementById('compass').classList.add('open');
+  }
+  function closeCompass() { document.getElementById('compass').classList.remove('open'); }
+
+  document.getElementById('compass-close').onclick = closeCompass;
+  // Removed: clicking blank space no longer closes the overlay
+
+  // ── INIT ──────────────────────────────────────────────────────────────
+  layout();
+  setupSky();
+  window.addEventListener('resize', () => { layout(); drawMilkyWay(); drawConstellations(); if (document.getElementById('compass').classList.contains('open')) buildCompass(); });
+</script>
+</body>
+</html>
