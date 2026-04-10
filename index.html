@@ -408,6 +408,114 @@
       align-items: center;
       justify-content: center;
     }
+    /* ── OUTER RING (home screen) ────────────────────────────────────── */
+    #outer-ring {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      border: 1px dashed rgba(176,112,64,.13);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── DISCOVERY ───────────────────────────────────────────────────── */
+    #discovery {
+      background: radial-gradient(ellipse at 50% 55%,
+        #180700 0%, #0c0300 45%, #050102 100%);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.8s ease;
+    }
+    #discovery.visible { opacity: 1; pointer-events: all; }
+
+    #disc-canvas { position: absolute; inset: 0; pointer-events: none; }
+    #disc-content { position: absolute; inset: 0; }
+
+    .comm-fire {
+      position: absolute;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      cursor: pointer;
+      transition: transform 0.2s, opacity 0.3s;
+    }
+    .comm-fire:hover { transform: translate(-50%, -50%) scale(1.3); }
+    .comm-fire.dimmed { opacity: 0.12; pointer-events: none; }
+
+    .comm-label {
+      position: absolute;
+      text-align: center;
+      pointer-events: none;
+      color: rgba(176,112,64,.5);
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      transform: translateX(-50%);
+      white-space: nowrap;
+      transition: opacity 0.3s;
+    }
+    .comm-label.mine { color: rgba(255,180,80,.8); font-size: 11px; }
+    .comm-label.dimmed { opacity: 0.1; }
+
+    #disc-filter {
+      position: absolute;
+      bottom: 32px; left: 0; right: 0;
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 12px;
+      flex-wrap: wrap;
+    }
+    .disc-pill {
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid rgba(176,112,64,.2);
+      color: rgba(176,112,64,.4);
+      font-size: 10px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      background: transparent;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .disc-pill.active {
+      border-color: rgba(176,112,64,.55);
+      color: #b07040;
+      background: rgba(176,112,64,.08);
+    }
+    #disc-close {
+      position: absolute;
+      top: 24px; left: 28px;
+      color: rgba(176,112,64,.35);
+      font-size: 11px;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      cursor: pointer;
+      z-index: 10;
+      transition: color 0.2s;
+    }
+    #disc-close:hover { color: rgba(176,112,64,.7); }
+    #disc-level {
+      position: absolute;
+      top: 18px; left: 50%; transform: translateX(-50%);
+      color: rgba(176,112,64,.22);
+      font-size: 9px;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    #disc-panel {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: linear-gradient(180deg, rgba(16,5,2,.97), rgba(8,2,1,.99));
+      border-top: 1px solid rgba(176,112,64,.2);
+      border-radius: 20px 20px 0 0;
+      padding: 20px 24px 40px;
+      z-index: 20;
+      transform: translateY(100%);
+      transition: transform .35s cubic-bezier(.25,.46,.45,.94);
+    }
   </style>
 </head>
 <body>
@@ -432,6 +540,16 @@
     <div class="panel-handle"></div>
     <div id="panel-inner"></div>
   </div>
+</div>
+
+<!-- DISCOVERY SCREEN -->
+<div id="discovery" class="screen">
+  <canvas id="disc-canvas"></canvas>
+  <div id="disc-content"></div>
+  <div id="disc-level">Hāmākua · Communities</div>
+  <div id="disc-close">← ʻOhana</div>
+  <div id="disc-filter"></div>
+  <div id="disc-panel"></div>
 </div>
 
 <!-- COMPASS OVERLAY -->
@@ -468,6 +586,29 @@
     { name: 'Leilani', text: 'So excited for the sunrise ceremony!', sent: false },
     { name: 'You',     text: "Me too! Who's bringing flowers?",       sent: true  },
     { name: 'Kaimana', text: "I'll bring the pikake 🌸",              sent: false },
+  ];
+
+  // ── COMMUNITY DISCOVERY DATA ──────────────────────────────────────────
+  const COMMUNITIES = [
+    { id: 'hamakua',    name: 'Hāmākua',             type: 'land',    desc: 'A living sanctuary on the Hāmākua Coast — land stewardship, community living, and inner transformation.',          members: 24, isMe: true, dist: 0,    angle: 0   },
+    { id: 'waipio',     name: 'Waipiʻo Tenders',      type: 'land',    desc: 'Tending the sacred valley floor through regenerative stewardship and traditional farming.',                         members: 12, dist: 0.28, angle: 42  },
+    { id: 'kohala',     name: 'Kohala Commons',        type: 'story',   desc: 'Gathering the voices and histories of the Kohala mountain communities across generations.',                          members: 18, dist: 0.35, angle: 148 },
+    { id: 'kona-heal',  name: 'Kona Healing Arts',     type: 'healing', desc: 'Practitioners weaving somatic, herbal, and ceremonial healing in the heart of Kona.',                              members: 15, dist: 0.44, angle: 218 },
+    { id: 'puna-arts',  name: 'Puna Creative',         type: 'arts',    desc: 'Artists and makers rooted in the volcanic land of lower Puna, where creation meets raw earth.',                    members: 9,  dist: 0.50, angle: 292 },
+    { id: 'hana',       name: 'Hāna Land Collective',  type: 'land',    desc: 'Regenerative land stewards along the sacred Hāna coast of Maui.',                                                  members: 22, dist: 0.64, angle: 68  },
+    { id: 'manoa',      name: 'Mānoa ʻOhana',          type: 'healing', desc: 'A family circle practicing deep listening, mutual care, and embodied presence in the valley.',                     members: 31, dist: 0.58, angle: 188 },
+    { id: 'kauai',      name: 'Wai Ola Kauaʻi',        type: 'land',    desc: 'Water wisdom and land healing on the lush north shore of Kauaʻi.',                                                 members: 16, dist: 0.71, angle: 328 },
+    { id: 'upcountry',  name: 'Upcountry Arts',         type: 'arts',    desc: 'Ceremonial artists and craftspeople woven into the Maui upcountry landscape.',                                     members: 11, dist: 0.60, angle: 112 },
+    { id: 'kona-story', name: 'Kona Story Circle',      type: 'story',   desc: 'Elders and youth exchanging mele, moʻolelo, and living memory around the fire.',                                   members: 8,  dist: 0.77, angle: 258 },
+    { id: 'lanai',      name: 'Lānaʻi Keepers',         type: 'land',    desc: 'A small but devoted circle tending the forgotten lands and silences of Lānaʻi.',                                   members: 6,  dist: 0.84, angle: 172 },
+    { id: 'molokai',    name: 'Molokaʻi Aloha',         type: 'story',   desc: 'Deep roots practicing ahupuaʻa stewardship and aloha ʻāina on the most Hawaiian island.',                          members: 20, dist: 0.88, angle: 30  },
+  ];
+
+  const CONNECTIONS = [
+    ['hamakua','waipio'], ['hamakua','kohala'], ['hamakua','kona-heal'],
+    ['hamakua','hana'],   ['waipio','kohala'],  ['kona-heal','manoa'],
+    ['puna-arts','upcountry'], ['hana','kauai'], ['kauai','manoa'],
+    ['kohala','kona-story'],   ['molokai','hamakua'],
   ];
 
   // ── HELPERS ───────────────────────────────────────────────────────────
@@ -518,10 +659,19 @@
     const ring = document.getElementById('orbit-ring');
     ring.style.width = ring.style.height = ringDiam + 'px';
 
+    // Outer discovery ring — visual indicator only, background tap triggers navigation
+    let outerRing = document.getElementById('outer-ring');
+    if (!outerRing) {
+      outerRing = document.createElement('div');
+      outerRing.id = 'outer-ring';
+      document.getElementById('home').appendChild(outerRing);
+    }
+    outerRing.style.width = outerRing.style.height = (ringDiam * 1.52) + 'px';
+
     const center = document.getElementById('center');
     const cs = aSize * 1.5;
     center.style.width = center.style.height = cs + 'px';
-    center.onclick = transitionToSky;
+    center.onclick = e => { e.stopPropagation(); transitionToSky(); };
     initFireCanvas(Math.round(cs));
 
     const container = document.getElementById('avatars');
@@ -562,6 +712,7 @@
       label.className = 'avatar-label';
       label.style.fontSize = fSize + 'px';
       label.textContent = name;
+      wrap.addEventListener('click', e => e.stopPropagation());
       wrap.appendChild(circle); wrap.appendChild(label);
       container.appendChild(wrap);
     });
@@ -1219,10 +1370,151 @@
   document.getElementById('compass-close').onclick = closeCompass;
   // Removed: clicking blank space no longer closes the overlay
 
+  // ── DISCOVERY ─────────────────────────────────────────────────────────
+  let discFilter = 'all';
+
+  function buildDiscovery() {
+    const canvas  = document.getElementById('disc-canvas');
+    const content = document.getElementById('disc-content');
+    canvas.width = innerWidth; canvas.height = innerHeight;
+    content.innerHTML = '';
+
+    const ctx  = canvas.getContext('2d');
+    ctx.clearRect(0, 0, innerWidth, innerHeight);
+
+    const cx   = innerWidth / 2;
+    const cy   = innerHeight / 2 + innerHeight * 0.04;
+    const maxR = Math.min(innerWidth, innerHeight) * 0.40;
+
+    // Proximity rings
+    [0.34, 0.67, 1.0].forEach((scale, i) => {
+      ctx.beginPath();
+      ctx.arc(cx, cy, maxR * scale, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(176,112,64,${0.07 - i * 0.015})`;
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 9]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    });
+
+    // Connection lines
+    const toXY = c => c.isMe
+      ? [cx, cy]
+      : [cx + Math.cos((c.angle - 90) * Math.PI / 180) * c.dist * maxR,
+         cy + Math.sin((c.angle - 90) * Math.PI / 180) * c.dist * maxR];
+
+    CONNECTIONS.forEach(([a, b]) => {
+      const ca = COMMUNITIES.find(c => c.id === a);
+      const cb = COMMUNITIES.find(c => c.id === b);
+      if (!ca || !cb) return;
+      const [ax, ay] = toXY(ca), [bx, by] = toXY(cb);
+      ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by);
+      ctx.strokeStyle = 'rgba(176,112,64,.06)';
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
+    });
+
+    // Filter bar
+    const filterBar = document.getElementById('disc-filter');
+    filterBar.innerHTML = '';
+    [['all','All'],['land','Land'],['healing','Healing'],['arts','Arts'],['story','Story']].forEach(([val, label]) => {
+      const pill = document.createElement('div');
+      pill.className = 'disc-pill' + (discFilter === val ? ' active' : '');
+      pill.textContent = label;
+      pill.onclick = e => { e.stopPropagation(); discFilter = val; buildDiscovery(); };
+      filterBar.appendChild(pill);
+    });
+
+    // Community fires
+    COMMUNITIES.forEach(comm => {
+      const [x, y] = toXY(comm);
+      const size   = comm.isMe ? 30 : Math.max(10, 7 + comm.members * 0.38);
+      const active = discFilter === 'all' || comm.isMe || comm.type === discFilter;
+
+      const fire = document.createElement('div');
+      fire.className = 'comm-fire' + (active ? '' : ' dimmed');
+      const gs = (size * 0.5).toFixed(1), gl = (size * 1.2).toFixed(1);
+      fire.style.cssText = [
+        `left:${x}px`, `top:${y}px`,
+        `width:${size}px`, `height:${size}px`,
+        `background:radial-gradient(circle,rgba(255,220,100,.95) 8%,rgba(255,120,20,.8) 50%,rgba(255,60,0,0) 100%)`,
+        `box-shadow:0 0 ${gs}px ${(size*.2).toFixed(1)}px rgba(255,120,30,.6),0 0 ${gl}px ${(size*.4).toFixed(1)}px rgba(255,80,10,.25)`,
+        `animation:hpulse ${(2.2 + Math.random() * 1.8).toFixed(2)}s ease-in-out infinite`,
+        `animation-delay:-${(Math.random() * 3).toFixed(2)}s`,
+      ].join(';');
+      if (active) fire.onclick = e => { e.stopPropagation(); showDiscPanel(comm); };
+      content.appendChild(fire);
+
+      const lbl = document.createElement('div');
+      lbl.className = 'comm-label' + (comm.isMe ? ' mine' : '') + (active ? '' : ' dimmed');
+      lbl.style.left = x + 'px';
+      lbl.style.top  = (y + size / 2 + 6) + 'px';
+      lbl.textContent = comm.name;
+      content.appendChild(lbl);
+    });
+  }
+
+  function showDiscPanel(comm) {
+    const panel = document.getElementById('disc-panel');
+    const typeLabel = { land:'Land & Stewardship', healing:'Healing Arts', arts:'Creative Arts', story:'Story & Memory' }[comm.type] || comm.type;
+    panel.innerHTML = `
+      <div style="width:36px;height:4px;background:rgba(176,112,64,.22);border-radius:2px;margin:0 auto 18px;"></div>
+      <div style="color:#b07040;font-size:12px;letter-spacing:.18em;text-transform:uppercase;text-align:center;margin-bottom:4px;">${comm.name}</div>
+      <div style="color:rgba(176,112,64,.35);font-size:10px;letter-spacing:.1em;text-transform:uppercase;text-align:center;margin-bottom:18px;">${typeLabel}&nbsp;·&nbsp;${comm.members} members</div>
+      <p style="color:#c8904e;font-size:15px;line-height:1.75;text-align:center;font-weight:300;margin-bottom:28px;">${comm.desc}</p>
+      ${comm.isMe
+        ? `<div style="text-align:center;color:rgba(176,112,64,.4);font-size:11px;letter-spacing:.12em;text-transform:uppercase;">Your Circle</div>`
+        : `<div style="text-align:center;"><div id="disc-join-btn" style="display:inline-block;padding:12px 32px;border:1px solid rgba(176,112,64,.35);border-radius:24px;color:#b07040;font-size:12px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;">Request to Join</div></div>`
+      }
+    `;
+    panel.getBoundingClientRect();
+    panel.style.transform = 'translateY(0)';
+    panel.onclick = e => e.stopPropagation();
+    if (!comm.isMe) {
+      document.getElementById('disc-join-btn').onclick = function() {
+        this.textContent = 'Request Sent ✓';
+        this.style.opacity = '.5';
+        this.style.pointerEvents = 'none';
+      };
+    }
+  }
+
+  function transitionToDiscovery() {
+    discFilter = 'all';
+    buildDiscovery();
+    document.getElementById('disc-panel').style.transform = 'translateY(100%)';
+    document.getElementById('discovery').classList.add('visible');
+    document.getElementById('home').classList.add('fade-out');
+  }
+
+  function transitionFromDiscovery() {
+    document.getElementById('discovery').classList.remove('visible');
+    document.getElementById('home').classList.remove('fade-out');
+  }
+
   // ── INIT ──────────────────────────────────────────────────────────────
   layout();
   setupSky();
-  window.addEventListener('resize', () => { layout(); drawMilkyWay(); drawConstellations(); if (document.getElementById('compass').classList.contains('open')) buildCompass(); });
+  // Tapping home background outside the avatar ring → Discovery
+  document.getElementById('home').addEventListener('click', e => {
+    const vmin = Math.min(innerWidth, innerHeight);
+    const dist = Math.hypot(e.clientX - innerWidth / 2, e.clientY - innerHeight / 2);
+    if (dist > vmin / 3) transitionToDiscovery();
+  });
+
+  document.getElementById('disc-close').onclick = transitionFromDiscovery;
+
+  // Tapping discovery background collapses open panel
+  document.getElementById('discovery').addEventListener('click', () => {
+    const p = document.getElementById('disc-panel');
+    if (p.style.transform !== 'translateY(100%)') p.style.transform = 'translateY(100%)';
+  });
+
+  window.addEventListener('resize', () => {
+    layout(); drawMilkyWay(); drawConstellations();
+    if (document.getElementById('compass').classList.contains('open')) buildCompass();
+    if (document.getElementById('discovery').classList.contains('visible')) buildDiscovery();
+  });
 </script>
 </body>
 </html>
