@@ -32,29 +32,36 @@
       position: absolute;
       top: 50%; left: 50%;
       transform: translate(-50%, -50%);
-      background: #2a2a2a;
+      background: transparent;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 2px solid #555;
+      border: none;
       cursor: pointer;
-      z-index: 2;
+      z-index: 4;
     }
     #fire-canvas {
       position: absolute;
       top: 50%; left: 50%;
       transform: translate(-50%, -50%);
       pointer-events: none;
-      z-index: 3;
+      z-index: 5;
     }
 
+    #avatars {
+      position: absolute;
+      inset: 0;
+      z-index: 4;
+      pointer-events: none;
+    }
     .avatar {
       position: absolute;
       display: flex;
       flex-direction: column;
       align-items: center;
       transform: translate(-50%, -50%);
+      pointer-events: all;
     }
     .avatar-circle { background: #2a2a2a; border-radius: 50%; border: 2px solid #666; }
     .avatar-label  { margin-top: 6px; color: #888; font-family: sans-serif; white-space: nowrap; }
@@ -414,10 +421,24 @@
       top: 50%; left: 50%;
       transform: translate(-50%, -50%);
       border-radius: 50%;
-      border: 1px dashed rgba(176,112,64,.13);
+      border: 2px solid rgba(80,140,60,.28);
+      box-shadow: 0 0 0 1px rgba(80,140,60,.08), inset 0 0 0 1px rgba(80,140,60,.08);
       pointer-events: none;
-      z-index: 0;
+      z-index: 1;
     }
+    #forest-canvas {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+    }
+    #outer-tap {
+      position: absolute;
+      inset: 0;
+      cursor: default;
+      z-index: 1;
+    }
+    #outer-tap.forest-hover { cursor: pointer; }
 
     /* ── DISCOVERY ───────────────────────────────────────────────────── */
     #discovery {
@@ -525,6 +546,9 @@
 
 <!-- HOME SCREEN -->
 <div id="home" class="screen">
+  <canvas id="forest-canvas"></canvas>
+  <div id="outer-tap"></div>
+  <div id="outer-ring"></div>
   <div id="orbit-ring"></div>
   <div id="center"></div>
   <div id="avatars"></div>
@@ -567,7 +591,72 @@
 
 <script>
   // ── DATA ──────────────────────────────────────────────────────────────
-  const USERS = ['Snoopy', 'User 2', 'User 3', 'User 4', 'User 5', 'User 6'];
+  const USERS = [
+    {
+      name: 'Snoopy', isMe: true,
+      role: 'Seeker & Fire Keeper',
+      bio:  'Seeker of stillness, lover of open fields and quiet afternoons.',
+      avatar: 'snoopy',
+      circles: [
+        { label: 'Hāmākua',     icon: '🌋', primary: true },
+        { label: 'ʻOhana',      icon: '🌺' },
+        { label: 'Land Keepers',icon: '🌿' },
+        { label: '+ Create',    icon: '✦', create: true },
+      ],
+    },
+    {
+      name: 'Kaimana', isMe: false,
+      role: 'Land Steward',
+      bio:  'Land steward and community builder rooted in the Hāmākua coast.',
+      circles: [
+        { label: 'Hāmākua',  icon: '🌋', primary: true },
+        { label: 'Wai Ola',  icon: '💧' },
+        { label: '+ Create', icon: '✦', create: true },
+      ],
+    },
+    {
+      name: 'Leilani', isMe: false,
+      role: 'Healing Arts',
+      bio:  'Practitioner of embodied presence and regenerative medicine.',
+      circles: [
+        { label: 'Hāmākua',     icon: '🌋', primary: true },
+        { label: 'Healing Arts', icon: '🌸' },
+        { label: 'ʻOhana',      icon: '🌺' },
+        { label: '+ Create',    icon: '✦', create: true },
+      ],
+    },
+    {
+      name: 'Makoa', isMe: false,
+      role: 'Keeper of Stories',
+      bio:  'Deep listener, storyteller, and keeper of cultural memory.',
+      circles: [
+        { label: 'Hāmākua',    icon: '🌋', primary: true },
+        { label: 'Story Circle',icon: '🔥' },
+        { label: '+ Create',   icon: '✦', create: true },
+      ],
+    },
+    {
+      name: 'Noa', isMe: false,
+      role: 'Farmer & Forager',
+      bio:  'Farmer, forager, and builder of soil and community alike.',
+      circles: [
+        { label: 'Hāmākua',     icon: '🌋', primary: true },
+        { label: 'Land Keepers', icon: '🌿' },
+        { label: '+ Create',    icon: '✦', create: true },
+      ],
+    },
+    {
+      name: 'Hina', isMe: false,
+      role: 'Artist & Ceremonialist',
+      bio:  'Artist and ceremonialist weaving beauty into daily life.',
+      circles: [
+        { label: 'Hāmākua',    icon: '🌋', primary: true },
+        { label: 'Creative Arts',icon: '🎨' },
+        { label: 'ʻOhana',     icon: '🌺' },
+        { label: '+ Create',   icon: '✦', create: true },
+      ],
+    },
+  ];
 
   // Star positions as [x%, y%] of viewport
   const MAKALII_STARS = [
@@ -647,6 +736,85 @@
     return el;
   }
 
+  // ── FOREST RING ───────────────────────────────────────────────────────
+  function drawForest(outerR, cx, cy) {
+    const canvas = document.getElementById('forest-canvas');
+    canvas.width  = innerWidth;
+    canvas.height = innerHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, innerWidth, innerHeight);
+
+    const treeCount = Math.round(outerR * 0.38);
+    const treeH     = outerR * 0.22;   // tree height relative to ring radius
+    const treeW     = treeH * 0.52;
+    const trunkH    = treeH * 0.28;
+    const trunkW    = treeW * 0.18;
+
+    for (let i = 0; i < treeCount; i++) {
+      // Spread trees slightly randomly around the ring
+      const baseAngle = (2 * Math.PI / treeCount) * i;
+      const jitter    = (Math.random() - 0.5) * (2 * Math.PI / treeCount) * 0.6;
+      const angle     = baseAngle + jitter;
+
+      // Vary distance slightly so trees feel organic, not mechanical
+      const r   = outerR + treeH * (0.12 + Math.random() * 0.32);
+      const tx  = cx + Math.cos(angle) * r;
+      const ty  = cy + Math.sin(angle) * r;
+
+      // Vary size slightly per tree
+      const scale = 0.72 + Math.random() * 0.56;
+      const th    = treeH * scale;
+      const tw    = treeW * scale;
+      const trH   = trunkH * scale;
+      const trW   = trunkW * scale;
+
+      // Depth cue — trees further from fire glow slightly dimmer
+      const alpha = 0.18 + Math.random() * 0.22;
+
+      ctx.save();
+      ctx.translate(tx, ty);
+      ctx.rotate(angle + Math.PI / 2); // roots face outward from center
+
+      // Trunk
+      ctx.fillStyle = `rgba(60,30,8,${alpha * 0.9})`;
+      ctx.fillRect(-trW / 2, 0, trW, trH);
+
+      // Three stacked triangles (classic pine silhouette)
+      const layers = 3;
+      for (let l = 0; l < layers; l++) {
+        const lScale  = 1 - l * 0.22;
+        const lW      = tw * lScale;
+        const lH      = th * 0.42 * lScale;
+        const lY      = trH + (th * 0.18 * l) - lH * 0.15;
+        const fireGlow = l === 0 ? alpha * 0.15 : 0; // bottom layer catches faint orange
+
+        // Pine canopy — dark green with faint amber base glow
+        ctx.beginPath();
+        ctx.moveTo(0, -(lY + lH));
+        ctx.lineTo(-lW / 2, -lY);
+        ctx.lineTo(lW / 2,  -lY);
+        ctx.closePath();
+        ctx.fillStyle = `rgba(${30 + Math.round(fireGlow * 200)},${55 + Math.round(l * 8)},${18},${alpha})`;
+        ctx.fill();
+
+        // Subtle edge highlight
+        ctx.strokeStyle = `rgba(80,${140 + l * 10},50,${alpha * 0.4})`;
+        ctx.lineWidth   = 0.5;
+        ctx.stroke();
+      }
+
+      ctx.restore();
+    }
+
+    // Soft ambient glow just inside the tree ring — fire light on the forest floor
+    const grad = ctx.createRadialGradient(cx, cy, outerR * 0.82, cx, cy, outerR * 1.18);
+    grad.addColorStop(0,   'rgba(255,100,20,0.00)');
+    grad.addColorStop(0.4, 'rgba(255,80,15,0.045)');
+    grad.addColorStop(1,   'rgba(255,60,10,0.00)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, innerWidth, innerHeight);
+  }
+
   // ── HOME LAYOUT ───────────────────────────────────────────────────────
   function layout() {
     const vmin     = Math.min(innerWidth, innerHeight);
@@ -659,61 +827,56 @@
     const ring = document.getElementById('orbit-ring');
     ring.style.width = ring.style.height = ringDiam + 'px';
 
-    // Outer discovery ring — visual indicator only, background tap triggers navigation
-    let outerRing = document.getElementById('outer-ring');
-    if (!outerRing) {
-      outerRing = document.createElement('div');
-      outerRing.id = 'outer-ring';
-      document.getElementById('home').appendChild(outerRing);
-    }
-    outerRing.style.width = outerRing.style.height = (ringDiam * 1.52) + 'px';
+    // Outer ring + tap zone
+    const outerDiam = ringDiam * 1.58;
+    document.getElementById('outer-ring').style.width =
+    document.getElementById('outer-ring').style.height = outerDiam + 'px';
+
+    // Full-screen tap area — only fires if click lands outside the outer ring
+    const outerTap = document.getElementById('outer-tap');
+    const outerR = outerDiam / 2;
+    outerTap.onmousemove = e => {
+      const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
+      outerTap.classList.toggle('forest-hover', dist > outerR);
+    };
+    outerTap.onmouseleave = () => outerTap.classList.remove('forest-hover');
+    outerTap.onclick = e => {
+      const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
+      if (dist > outerR) transitionToDiscovery();
+    };
+
+    drawForest(outerDiam / 2, cx, cy);
 
     const center = document.getElementById('center');
-    const cs = aSize * 1.5;
+    const cs = aSize * 2.4;
     center.style.width = center.style.height = cs + 'px';
     center.onclick = e => { e.stopPropagation(); transitionToSky(); };
     initFireCanvas(Math.round(cs));
 
     const container = document.getElementById('avatars');
     container.innerHTML = '';
-    USERS.forEach((name, i) => {
+    USERS.forEach((user, i) => {
       const angle = -Math.PI / 2 + (2 * Math.PI / USERS.length) * i;
       const x = cx + ringR * Math.cos(angle), y = cy + ringR * Math.sin(angle);
+
       const wrap = document.createElement('div');
       wrap.className = 'avatar';
       wrap.style.left = x + 'px'; wrap.style.top = y + 'px';
+
       const circle = document.createElement('div');
-      circle.className = 'avatar-circle';
-      circle.style.width = circle.style.height = aSize + 'px';
-      circle.style.overflow = 'hidden';
-      circle.style.display = 'flex';
-      circle.style.alignItems = 'center';
-      circle.style.justifyContent = 'center';
-      if (i === 0) {
-        circle.classList.add('me');
-        circle.onclick = e => { e.stopPropagation(); openCompass(); };
-        // Snoopy — white dog with brown ears
-        const s = aSize;
-        circle.innerHTML = `<svg width="${s}" height="${s}" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-          <!-- left ear -->
-          <ellipse cx="28" cy="38" rx="18" ry="26" fill="#8B5E3C" transform="rotate(-15 28 38)"/>
-          <!-- right ear -->
-          <ellipse cx="72" cy="38" rx="18" ry="26" fill="#8B5E3C" transform="rotate(15 72 38)"/>
-          <!-- head -->
-          <circle cx="50" cy="54" r="34" fill="#f5f5f0"/>
-          <!-- eyes -->
-          <circle cx="40" cy="48" r="4" fill="#222"/>
-          <circle cx="60" cy="48" r="4" fill="#222"/>
-          <!-- nose -->
-          <ellipse cx="50" cy="63" rx="7" ry="5" fill="#222"/>
-        </svg>`;
-      }
+      circle.className = 'avatar-circle' + (user.isMe ? ' me' : '');
+      circle.style.cssText = `width:${aSize}px;height:${aSize}px;overflow:hidden;display:flex;align-items:center;justify-content:center;cursor:pointer;`;
+      circle.innerHTML = makeAvatarSvg(user, aSize);
+      circle.onclick = e => { e.stopPropagation(); openCompass(user); };
+
       const label = document.createElement('div');
       label.className = 'avatar-label';
       label.style.fontSize = fSize + 'px';
-      label.textContent = name;
+      label.textContent = user.name;
+
       wrap.addEventListener('click', e => e.stopPropagation());
-      wrap.appendChild(circle); wrap.appendChild(label);
+      wrap.appendChild(circle);
+      wrap.appendChild(label);
       container.appendChild(wrap);
     });
   }
@@ -1077,11 +1240,9 @@
 
   // ── FIRE CANVAS ───────────────────────────────────────────────────────
   let fireRAF = null;
-  let sparks  = [];
 
   function initFireCanvas(fireSize) {
-    // Canvas is 3× the fire circle so sparks can escape the clipping area
-    const sz = Math.round(fireSize * 3);
+    const sz = Math.round(fireSize * 3.2);
     let canvas = document.getElementById('fire-canvas');
     if (!canvas) {
       canvas = document.createElement('canvas');
@@ -1095,7 +1256,6 @@
     canvas.width = canvas.height = sz;
     canvas.style.width = canvas.style.height = sz + 'px';
 
-    sparks = [];
     if (fireRAF) cancelAnimationFrame(fireRAF);
     animateFire(canvas, fireSize);
   }
@@ -1103,21 +1263,16 @@
   function animateFire(canvas, fireSize) {
     const ctx = canvas.getContext('2d');
     const sz  = canvas.width;
-    const cx  = sz / 2;   // canvas centre (= fire centre)
+    const cx  = sz / 2;
     const cy  = sz / 2;
     const r   = fireSize / 2;
 
-    // ── Turbulence helper: sum of sines at irrational frequency ratios ──
-    // Slower frequencies = more natural, less frantic flame motion
+    // Gentle turbulence — only two slow harmonics
     function turb(t, seed) {
-      return Math.sin(t * 0.97 + seed)        * 1.000
-           + Math.sin(t * 1.73 + seed * 1.31) * 0.500
-           + Math.sin(t * 2.41 + seed * 0.74) * 0.250
-           + Math.sin(t * 3.67 + seed * 1.87) * 0.125
-           + Math.sin(t * 5.03 + seed * 2.39) * 0.062;
+      return Math.sin(t * 0.52 + seed)        * 1.0
+           + Math.sin(t * 0.97 + seed * 1.31) * 0.45;
     }
 
-    // ── Rounded rect fallback (ctx.roundRect not in all Edge versions) ──
     function roundedRect(x, y, w, h, rad) {
       ctx.beginPath();
       ctx.moveTo(x + rad, y);
@@ -1132,45 +1287,24 @@
       ctx.closePath();
     }
 
-    function spawnSpark(wind) {
-      const spread = (Math.random() - 0.5) * r * 0.55;
-      const speed  = 1.4 + Math.random() * 2.8;
-      const angle  = -Math.PI / 2 + (Math.random() - 0.5) * 0.9;
-      return {
-        x:     cx + spread,
-        y:     cy - r * 0.05,
-        vx:    Math.cos(angle) * speed + wind * 0.5,
-        vy:    Math.sin(angle) * speed,
-        life:  1,
-        decay: 0.007 + Math.random() * 0.016,
-        rad:   0.7 + Math.random() * 1.8,
-        hue:   12 + Math.random() * 38,
-      };
-    }
-
     function drawFlame(t, offX, width, height, colors, seed, wind) {
-      // Each height level gets independent turbulence — flame bends more at the tip
-      const wobBase = turb(t, seed)        * r * 0.04;
-      const wobMid  = turb(t, seed + 1.57) * r * 0.07;
-      const wobTip  = turb(t, seed + 3.14) * r * 0.10;
+      const wob  = turb(t, seed)        * r * 0.045;
+      const wobT = turb(t, seed + 1.57) * r * 0.07;
+      const wBase = wind * r * 0.025;
+      const wTip  = wind * r * 0.10;
 
-      // Wind pushes tip more than base (natural drafting effect)
-      const wBase = wind * r * 0.03;
-      const wMid  = wind * r * 0.08;
-      const wTip  = wind * r * 0.18;
-
-      const baseY = cy + r * 0.42;
+      const baseY = cy + r * 0.38;
       const tipY  = baseY - height;
-      const tipX  = cx + offX + wobTip + wTip;
-      const midY  = baseY - height * 0.55;
-      const midX  = cx + offX + wobMid + wMid;
-      const lx    = cx - width + offX + wobBase + wBase;
-      const rx    = cx + width + offX + wobBase + wBase;
+      const tipX  = cx + offX + wobT + wTip;
+      const midY  = baseY - height * 0.52;
+      const midX  = cx + offX + wob + wBase;
+      const lx    = cx - width + offX + wob + wBase;
+      const rx    = cx + width + offX + wob + wBase;
 
       ctx.beginPath();
       ctx.moveTo(lx, baseY);
-      ctx.quadraticCurveTo(midX - width * 0.55, midY, tipX, tipY);
-      ctx.quadraticCurveTo(midX + width * 0.55, midY, rx,   baseY);
+      ctx.quadraticCurveTo(midX - width * 0.5, midY, tipX, tipY);
+      ctx.quadraticCurveTo(midX + width * 0.5, midY, rx,   baseY);
       ctx.closePath();
 
       const grad = ctx.createLinearGradient(cx + offX, baseY, tipX, tipY);
@@ -1181,102 +1315,63 @@
 
     function drawFrame() {
       try {
-      ctx.clearRect(0, 0, sz, sz);
-      const t = performance.now() / 1000;
+        ctx.clearRect(0, 0, sz, sz);
+        const t = performance.now() / 1000;
 
-      // Wind: slow atmospheric drift with occasional unpredictable gusts
-      const wind = Math.sin(t * 0.29) * 0.45
-                 + Math.sin(t * 0.71) * 0.25
-                 + Math.sin(t * 1.13) * 0.12
-                 + turb(t, 77) * 0.08;
+        // Very gentle, slow wind
+        const wind = Math.sin(t * 0.18) * 0.28
+                   + Math.sin(t * 0.43) * 0.14;
 
-      // ── Clip circle for fire body ──────────────────────────────────
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(cx, cy, r, 0, Math.PI * 2);
-      ctx.clip();
-
-      // Logs
-      const logY = cy + r * 0.52, logH = r * 0.18;
-      ctx.save();
-      ctx.translate(cx - r * 0.13, logY); ctx.rotate(-0.35);
-      const lg1 = ctx.createLinearGradient(0, -logH/2, 0, logH/2);
-      lg1.addColorStop(0, '#5c3010'); lg1.addColorStop(1, '#2a1206');
-      ctx.fillStyle = lg1;
-      roundedRect(-r * 0.38, -logH/2, r * 0.76, logH, 4); ctx.fill();
-      ctx.restore();
-      ctx.save();
-      ctx.translate(cx + r * 0.13, logY); ctx.rotate(0.35);
-      const lg2 = ctx.createLinearGradient(0, -logH/2, 0, logH/2);
-      lg2.addColorStop(0, '#4e2a0e'); lg2.addColorStop(1, '#1e0d04');
-      ctx.fillStyle = lg2;
-      roundedRect(-r * 0.38, -logH/2, r * 0.76, logH, 4); ctx.fill();
-      ctx.restore();
-
-      // Ember glow — pulses with the turbulence
-      const eg = ctx.createRadialGradient(cx, logY - logH * 0.3, 0, cx, logY, r * 0.5);
-      const ep = 0.38 + 0.14 * Math.sin(t * 3.1 + turb(t, 5) * 0.5);
-      eg.addColorStop(0, `rgba(255,130,10,${ep})`);
-      eg.addColorStop(1, 'rgba(255,50,0,0)');
-      ctx.fillStyle = eg;
-      ctx.beginPath(); ctx.ellipse(cx, logY, r * 0.5, r * 0.26, 0, 0, Math.PI * 2); ctx.fill();
-
-      // Flames — back to front, wide to narrow
-      // Outer body (dark red-orange)
-      drawFlame(t, 0,      r*.30, r*1.18, [[0,'rgba(155,25,0,.9)'],[.55,'rgba(205,60,0,.55)'],[1,'rgba(255,130,0,0)']], 0.0,  wind);
-      drawFlame(t,-r*.09,  r*.22, r*.96,  [[0,'rgba(170,30,0,.8)'],[.60,'rgba(215,70,0,.45)'],[1,'rgba(255,150,0,0)']], 1.73, wind);
-      drawFlame(t, r*.08,  r*.20, r*.90,  [[0,'rgba(160,28,0,.75)'],[.65,'rgba(210,65,0,.40)'],[1,'rgba(255,145,0,0)']], 3.07, wind);
-      // Mid flame (bright orange)
-      drawFlame(t, 0,      r*.20, r*.90,  [[0,'rgba(255,85,0,.95)'],[.50,'rgba(255,148,0,.7)'],[1,'rgba(255,220,50,0)']], 0.5,  wind);
-      drawFlame(t,-r*.05,  r*.15, r*.74,  [[0,'rgba(255,95,0,.85)'],[.55,'rgba(255,158,10,.6)'],[1,'rgba(255,230,55,0)']], 2.41, wind);
-      drawFlame(t, r*.06,  r*.13, r*.68,  [[0,'rgba(255,90,0,.80)'],[.55,'rgba(255,152,8,.55)'],[1,'rgba(255,228,52,0)']], 4.20, wind);
-      // Inner hot core (yellow-white)
-      drawFlame(t, 0,      r*.11, r*.60,  [[0,'rgba(255,235,120,1)'],[.40,'rgba(255,185,45,.85)'],[1,'rgba(255,255,180,0)']], 1.1, wind);
-      drawFlame(t, 0,      r*.06, r*.38,  [[0,'rgba(255,255,210,1)'],[.50,'rgba(255,225,110,.65)'],[1,'rgba(255,255,255,0)']], 2.8, wind);
-
-      ctx.restore(); // end fire-body clip
-
-      // Soft outer glow (bleeds beyond the circle — no clip active here)
-      const glow = ctx.createRadialGradient(cx, cy + r * 0.12, r * 0.25, cx, cy, r * 1.55);
-      glow.addColorStop(0,   'rgba(255,100,20,0)');
-      glow.addColorStop(0.5, `rgba(255,75,10,${0.055 + 0.025 * Math.sin(t * 2.1)})`);
-      glow.addColorStop(1,   'rgba(255,30,0,0)');
-      ctx.fillStyle = glow;
-      ctx.beginPath(); ctx.arc(cx, cy, r * 1.55, 0, Math.PI * 2); ctx.fill();
-
-      // ── Sparks — live on the large canvas, fly freely ──────────────
-      if (Math.random() < 0.55) sparks.push(spawnSpark(wind));
-      // Occasional burst
-      if (Math.random() < 0.04) {
-        for (let i = 0; i < 3; i++) sparks.push(spawnSpark(wind));
-      }
-
-      sparks = sparks.filter(s => s.life > 0);
-      sparks.forEach(s => {
-        s.x    += s.vx;
-        s.y    += s.vy;
-        s.vy   -= 0.055;   // buoyancy — hot sparks rise
-        s.vx   += wind * 0.03;  // wind drift accumulates
-        s.vx   *= 0.975;
-        s.vy   *= 0.985;
-        s.life -= s.decay;
-
-        const a = Math.pow(Math.max(s.life, 0), 1.4);
+        // ── Clip logs/embers to fire circle, flames rise freely above ──
+        ctx.save();
         ctx.beginPath();
-        ctx.arc(s.x, s.y, s.rad * s.life, 0, Math.PI * 2);
-        ctx.fillStyle = `hsla(${s.hue},100%,72%,${a})`;
-        ctx.fill();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.clip();
 
-        // trailing streak
-        if (s.life > 0.45) {
-          ctx.beginPath();
-          ctx.moveTo(s.x, s.y);
-          ctx.lineTo(s.x - s.vx * 3, s.y - s.vy * 3);
-          ctx.strokeStyle = `hsla(${s.hue + 12},100%,82%,${a * 0.38})`;
-          ctx.lineWidth = s.rad * s.life * 0.65;
-          ctx.stroke();
-        }
-      });
+        // Logs
+        const logY = cy + r * 0.50, logH = r * 0.16;
+        ctx.save();
+        ctx.translate(cx - r * 0.12, logY); ctx.rotate(-0.32);
+        const lg1 = ctx.createLinearGradient(0, -logH/2, 0, logH/2);
+        lg1.addColorStop(0, '#5c3010'); lg1.addColorStop(1, '#2a1206');
+        ctx.fillStyle = lg1;
+        roundedRect(-r * 0.36, -logH/2, r * 0.72, logH, 4); ctx.fill();
+        ctx.restore();
+        ctx.save();
+        ctx.translate(cx + r * 0.12, logY); ctx.rotate(0.32);
+        const lg2 = ctx.createLinearGradient(0, -logH/2, 0, logH/2);
+        lg2.addColorStop(0, '#4e2a0e'); lg2.addColorStop(1, '#1e0d04');
+        ctx.fillStyle = lg2;
+        roundedRect(-r * 0.36, -logH/2, r * 0.72, logH, 4); ctx.fill();
+        ctx.restore();
+
+        // Ember glow — slow, soft pulse
+        const ep = 0.28 + 0.08 * Math.sin(t * 1.8 + turb(t, 5) * 0.4);
+        const eg = ctx.createRadialGradient(cx, logY - logH * 0.3, 0, cx, logY, r * 0.48);
+        eg.addColorStop(0, `rgba(255,120,10,${ep})`);
+        eg.addColorStop(1, 'rgba(255,50,0,0)');
+        ctx.fillStyle = eg;
+        ctx.beginPath(); ctx.ellipse(cx, logY, r * 0.46, r * 0.22, 0, 0, Math.PI * 2); ctx.fill();
+
+        ctx.restore(); // end base clip — flames draw freely above
+
+        // Outer flame body — warm amber, fairly transparent
+        drawFlame(t, 0,     r*.32, r*1.40, [[0,'rgba(180,55,0,.55)'],[.55,'rgba(220,90,10,.30)'],[1,'rgba(255,140,20,0)']], 0.0,  wind);
+        drawFlame(t,-r*.09, r*.24, r*1.18, [[0,'rgba(190,60,0,.48)'],[.60,'rgba(225,95,10,.25)'],[1,'rgba(255,145,20,0)']], 1.73, wind);
+        drawFlame(t, r*.08, r*.22, r*1.10, [[0,'rgba(185,58,0,.45)'],[.65,'rgba(218,88,8,.22)'],[1,'rgba(255,140,18,0)']], 3.07, wind);
+        // Inner warm core
+        drawFlame(t, 0,     r*.20, r*1.00, [[0,'rgba(255,140,20,.70)'],[.45,'rgba(255,180,40,.45)'],[1,'rgba(255,220,80,0)']], 0.9, wind);
+        // Bright tip
+        drawFlame(t, 0,     r*.10, r*.70, [[0,'rgba(255,210,90,.80)'],[.50,'rgba(255,190,55,.40)'],[1,'rgba(255,240,160,0)']], 2.1, wind);
+
+        // Soft ambient glow
+        const glowA = 0.038 + 0.012 * Math.sin(t * 1.4);
+        const glow  = ctx.createRadialGradient(cx, cy + r * 0.1, r * 0.2, cx, cy, r * 1.4);
+        glow.addColorStop(0,   'rgba(255,100,20,0)');
+        glow.addColorStop(0.5, `rgba(255,80,15,${glowA})`);
+        glow.addColorStop(1,   'rgba(255,40,0,0)');
+        ctx.fillStyle = glow;
+        ctx.beginPath(); ctx.arc(cx, cy, r * 1.4, 0, Math.PI * 2); ctx.fill();
 
       } catch(e) { console.error('fire draw error:', e); }
       fireRAF = requestAnimationFrame(drawFrame);
@@ -1286,15 +1381,28 @@
   }
 
   // ── COMPASS ───────────────────────────────────────────────────────────
-  // Circles the user belongs to — first entry is always the current/active circle
-  const MY_CIRCLES = [
-    { label: 'Hāmākua',      icon: '🌋' },
-    { label: 'ʻOhana',       icon: '🌺' },
-    { label: 'Land Keepers', icon: '🌿' },
-    { label: '+ Create',     icon: '✦',  create: true },
-  ];
+  let compassUser = null;
+
+  function makeAvatarSvg(user, size) {
+    if (user.avatar === 'snoopy') {
+      return `<svg width="${size}" height="${size}" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="28" cy="38" rx="18" ry="26" fill="#8B5E3C" transform="rotate(-15 28 38)"/>
+        <ellipse cx="72" cy="38" rx="18" ry="26" fill="#8B5E3C" transform="rotate(15 72 38)"/>
+        <circle cx="50" cy="54" r="34" fill="#f5f5f0"/>
+        <circle cx="40" cy="48" r="4" fill="#222"/>
+        <circle cx="60" cy="48" r="4" fill="#222"/>
+        <ellipse cx="50" cy="63" rx="7" ry="5" fill="#222"/>
+      </svg>`;
+    }
+    const initials = user.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    return `<svg width="${size}" height="${size}" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="50" cy="50" r="50" fill="#2a1a08"/>
+      <text x="50" y="58" text-anchor="middle" font-size="34" font-family="sans-serif" fill="#b07040">${initials}</text>
+    </svg>`;
+  }
 
   function buildCompass() {
+    const user    = compassUser || USERS[0];
     const vmin    = Math.min(innerWidth, innerHeight);
     const ringD   = vmin * 0.72;
     const ringR   = ringD / 2;
@@ -1305,21 +1413,36 @@
     const ring = document.getElementById('compass-ring');
     ring.style.width = ring.style.height = ringD + 'px';
 
-    // Orbit ring mirrors home dashed ring
     const orbit = document.getElementById('compass-orbit');
     orbit.style.width = orbit.style.height = ringD * 0.86 + 'px';
 
-    // Size the heart center
+    // Center — show user's avatar instead of the heart
     const ctr = document.getElementById('compass-center-circle');
-    ctr.style.width  = ctr.style.height = ctrSize + 'px';
-    document.getElementById('compass-heart').style.fontSize = (ctrSize * 0.45) + 'px';
+    ctr.style.width = ctr.style.height = ctrSize + 'px';
+    ctr.style.overflow = 'hidden';
+    ctr.innerHTML = makeAvatarSvg(user, ctrSize);
+
+    // Name below center
+    let nameEl = document.getElementById('compass-user-name');
+    if (!nameEl) {
+      nameEl = document.createElement('div');
+      nameEl.id = 'compass-user-name';
+      nameEl.style.cssText = 'color:#d8a060;font-size:13px;letter-spacing:.08em;margin-top:8px;text-align:center;pointer-events:none;';
+      document.getElementById('compass-center').appendChild(nameEl);
+    }
+    nameEl.textContent = user.name;
+
+    // Tapping the center avatar shows that user's profile
+    ctr.style.cursor = 'pointer';
+    ctr.onclick = e => { e.stopPropagation(); showCompassProfile(user); };
 
     // Remove old circle points
     ring.querySelectorAll('.compass-point').forEach(el => el.remove());
+    const existing = document.getElementById('compass-profile-sheet');
+    if (existing) existing.remove();
 
-    // Evenly space circles around the ring — same math as home layout()
-    MY_CIRCLES.forEach((pt, i) => {
-      const angle = -Math.PI / 2 + (2 * Math.PI / MY_CIRCLES.length) * i;
+    user.circles.forEach((pt, i) => {
+      const angle = -Math.PI / 2 + (2 * Math.PI / user.circles.length) * i;
       const px    = ringR + Math.cos(angle) * ringR * 0.86;
       const py    = ringR + Math.sin(angle) * ringR * 0.86;
 
@@ -1341,31 +1464,69 @@
       const icon = document.createElement('span');
       icon.className      = 'compass-point-icon';
       icon.style.fontSize = (ptSize * 0.38) + 'px';
+      icon.style.color    = pt.create ? 'rgba(200,150,80,.85)' : '';
       icon.textContent    = pt.icon;
 
       const lbl = document.createElement('div');
       lbl.className      = 'compass-point-label';
       lbl.style.fontSize = lblSize + 'px';
+      lbl.style.color    = pt.create ? 'rgba(176,112,64,.65)' : '';
       lbl.textContent    = pt.label;
 
       circ.appendChild(icon);
       wrap.appendChild(circ);
       wrap.appendChild(lbl);
 
-      // Clicking a circle navigates to it and closes the overlay
       if (!pt.create) {
-        wrap.onclick = () => { closeCompass(); };
+        wrap.onclick = e => { e.stopPropagation(); closeCompass(); };
       }
 
       ring.appendChild(wrap);
     });
   }
 
-  function openCompass()  {
+  function showCompassProfile(user) {
+    let sheet = document.getElementById('compass-profile-sheet');
+    if (!sheet) {
+      sheet = document.createElement('div');
+      sheet.id = 'compass-profile-sheet';
+      sheet.style.cssText = `
+        position:absolute;bottom:0;left:0;right:0;
+        background:linear-gradient(180deg,rgba(16,5,2,.98),rgba(8,2,1,1));
+        border-top:1px solid rgba(176,112,64,.2);
+        border-radius:20px 20px 0 0;
+        padding:20px 24px 44px;
+        z-index:60;
+        transform:translateY(100%);
+        transition:transform .35s cubic-bezier(.25,.46,.45,.94);
+        display:flex;flex-direction:column;align-items:center;text-align:center;
+      `;
+      document.getElementById('compass').appendChild(sheet);
+    }
+    const sz = 56;
+    sheet.innerHTML = `
+      <div style="width:36px;height:4px;background:rgba(176,112,64,.22);border-radius:2px;margin-bottom:18px;"></div>
+      <div style="width:${sz}px;height:${sz}px;border-radius:50%;border:1px solid rgba(176,112,64,.3);overflow:hidden;margin-bottom:12px;">${makeAvatarSvg(user, sz)}</div>
+      <div style="color:#d8a060;font-size:18px;letter-spacing:.08em;margin-bottom:4px;">${user.name}</div>
+      <div style="color:rgba(176,112,64,.35);font-size:10px;letter-spacing:.16em;text-transform:uppercase;margin-bottom:18px;">${user.role || 'Circle Member'}</div>
+      <p style="color:#c8904e;font-size:14px;line-height:1.75;font-weight:300;margin-bottom:24px;max-width:280px;">${user.bio || ''}</p>
+      <div style="padding:11px 28px;border:1px solid rgba(176,112,64,.3);border-radius:24px;color:#b07040;font-size:11px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;">Send a Message</div>
+    `;
+    sheet.getBoundingClientRect();
+    sheet.style.transform = 'translateY(0)';
+    sheet.onclick = e => e.stopPropagation();
+  }
+
+  function openCompass(user) {
+    compassUser = user || USERS[0];
     buildCompass();
     document.getElementById('compass').classList.add('open');
   }
-  function closeCompass() { document.getElementById('compass').classList.remove('open'); }
+  function closeCompass() {
+    document.getElementById('compass').classList.remove('open');
+    const sheet = document.getElementById('compass-profile-sheet');
+    if (sheet) sheet.remove();
+  }
 
   document.getElementById('compass-close').onclick = closeCompass;
   // Removed: clicking blank space no longer closes the overlay
@@ -1495,12 +1656,7 @@
   // ── INIT ──────────────────────────────────────────────────────────────
   layout();
   setupSky();
-  // Tapping home background outside the avatar ring → Discovery
-  document.getElementById('home').addEventListener('click', e => {
-    const vmin = Math.min(innerWidth, innerHeight);
-    const dist = Math.hypot(e.clientX - innerWidth / 2, e.clientY - innerHeight / 2);
-    if (dist > vmin / 3) transitionToDiscovery();
-  });
+  // Discovery navigation is handled by #outer-tap click in layout()
 
   document.getElementById('disc-close').onclick = transitionFromDiscovery;
 
