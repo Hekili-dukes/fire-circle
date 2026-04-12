@@ -77,23 +77,61 @@
       50%       { box-shadow: 0 0 16px 7px rgba(255,180,60,.65), 0 0 34px 14px rgba(255,120,30,.3); }
     }
 
-    /* ── COMPASS OVERLAY ─────────────────────────────────────────────── */
+    /* ── COMMUNITY PAGE ──────────────────────────────────────────────── */
     #compass {
       display: none;
       position: fixed;
       inset: 0;
       z-index: 100;
-      background: rgba(5,2,0,.82);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
+      background: #111;
       align-items: center;
       justify-content: center;
     }
     #compass.open { display: flex; }
 
+    #compass-forest-canvas {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+    }
+    #compass-outer-ring {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      border: 2px solid rgba(80,140,60,.28);
+      box-shadow: 0 0 0 1px rgba(80,140,60,.08), inset 0 0 0 1px rgba(80,140,60,.08);
+      pointer-events: none;
+      z-index: 2;
+    }
+    #compass-outer-tap {
+      position: absolute;
+      inset: 0;
+      cursor: default;
+      z-index: 2;
+    }
+    #compass-outer-tap.forest-hover { cursor: pointer; }
+    #compass-level {
+      position: absolute;
+      top: 18px; left: 50%; transform: translateX(-50%);
+      color: rgba(176,112,64,.22);
+      font-size: 9px; letter-spacing: .22em; text-transform: uppercase;
+      pointer-events: none; white-space: nowrap; z-index: 10;
+    }
+    #compass-close {
+      position: absolute;
+      top: 24px; right: 28px;
+      color: rgba(176,112,64,.35);
+      font-size: 11px; letter-spacing: .18em; text-transform: uppercase;
+      cursor: pointer; z-index: 10; transition: color 0.2s;
+    }
+    #compass-close:hover { color: rgba(176,112,64,.7); }
+
     #compass-ring {
       position: relative;
       border-radius: 50%;
+      z-index: 3;
     }
 
     .compass-point {
@@ -166,6 +204,11 @@
       border: 1px dashed rgba(176,112,64,.22);
       border-radius: 50%;
       pointer-events: none;
+    }
+
+    @keyframes starPulse {
+      0%, 100% { transform: scale(1) rotate(0deg);   opacity: .85; }
+      50%       { transform: scale(1.18) rotate(15deg); opacity: 1;   }
     }
 
     /* Beating heart */
@@ -440,13 +483,13 @@
     }
     #outer-tap.forest-hover { cursor: pointer; }
 
-    /* ── DISCOVERY ───────────────────────────────────────────────────── */
+    /* ── DISCOVERY / GLOBAL ─────────────────────────────────────────── */
     #discovery {
-      background: radial-gradient(ellipse at 50% 55%,
-        #180700 0%, #0c0300 45%, #050102 100%);
+      background: #070715;
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.8s ease;
+      z-index: 60;
     }
     #discovery.visible { opacity: 1; pointer-events: all; }
 
@@ -504,18 +547,7 @@
       color: #b07040;
       background: rgba(176,112,64,.08);
     }
-    #disc-close {
-      position: absolute;
-      top: 24px; left: 28px;
-      color: rgba(176,112,64,.35);
-      font-size: 11px;
-      letter-spacing: .18em;
-      text-transform: uppercase;
-      cursor: pointer;
-      z-index: 10;
-      transition: color 0.2s;
-    }
-    #disc-close:hover { color: rgba(176,112,64,.7); }
+    #disc-close { display: none; }
     #disc-level {
       position: absolute;
       top: 18px; left: 50%; transform: translateX(-50%);
@@ -554,12 +586,15 @@
   <div id="avatars"></div>
 </div>
 
-<!-- SKY SCREEN -->
+<!-- SKY / HUB SCREEN -->
 <div id="sky" class="screen">
   <div id="bg-stars"></div>
   <canvas id="milky-way"></canvas>
   <svg id="constellation-svg" xmlns="http://www.w3.org/2000/svg"></svg>
-  <div id="sky-content"></div>
+  <canvas id="hub-forest-canvas" style="position:absolute;inset:0;pointer-events:none;z-index:2;"></canvas>
+  <div id="hub-outer-ring" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:50%;border:2px solid rgba(80,140,60,.28);box-shadow:0 0 0 1px rgba(80,140,60,.08),inset 0 0 0 1px rgba(80,140,60,.08);pointer-events:none;z-index:2;"></div>
+  <div style="position:absolute;top:18px;left:50%;transform:translateX(-50%);color:rgba(176,112,64,.22);font-size:9px;letter-spacing:.22em;text-transform:uppercase;pointer-events:none;white-space:nowrap;z-index:10;">Hub</div>
+  <div id="sky-content" style="position:absolute;inset:0;z-index:4;"></div>
   <div id="panel">
     <div class="panel-handle"></div>
     <div id="panel-inner"></div>
@@ -568,18 +603,46 @@
 
 <!-- DISCOVERY SCREEN -->
 <div id="discovery" class="screen">
-  <canvas id="disc-canvas"></canvas>
-  <div id="disc-content"></div>
-  <div id="disc-level">Hāmākua · Communities</div>
-  <div id="disc-close">← ʻOhana</div>
-  <div id="disc-filter"></div>
-  <div id="disc-panel"></div>
+  <canvas id="disc-forest-canvas" style="position:absolute;inset:0;pointer-events:none;z-index:1;"></canvas>
+  <div id="disc-outer-tap" style="position:absolute;inset:0;cursor:default;z-index:2;"></div>
+  <div id="disc-outer-ring" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:50%;border:2px solid rgba(80,140,60,.28);box-shadow:0 0 0 1px rgba(80,140,60,.08),inset 0 0 0 1px rgba(80,140,60,.08);pointer-events:none;z-index:2;"></div>
+  <div id="disc-level" style="position:absolute;top:18px;left:50%;transform:translateX(-50%);color:rgba(60,120,220,.22);font-size:9px;letter-spacing:.22em;text-transform:uppercase;pointer-events:none;white-space:nowrap;z-index:10;">Global</div>
+  <div id="disc-close" style="position:absolute;top:24px;right:28px;color:rgba(176,112,64,.35);font-size:11px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;z-index:10;transition:color .2s;">← Cosmic</div>
+  <canvas id="disc-canvas" style="position:absolute;inset:0;pointer-events:none;z-index:3;"></canvas>
+  <div id="disc-content" style="position:absolute;inset:0;z-index:4;"></div>
+  <div id="disc-filter" style="z-index:10;"></div>
+  <div id="disc-panel" style="z-index:20;"></div>
 </div>
 
-<!-- COMPASS OVERLAY -->
+<!-- INNERWORK / ALOHA PAGE -->
+<div id="innerwork" class="screen" style="background:#111;opacity:0;pointer-events:none;transition:opacity .6s ease;display:flex;align-items:center;justify-content:center;z-index:50;">
+  <canvas id="iw-forest-canvas" style="position:absolute;inset:0;pointer-events:none;z-index:1;"></canvas>
+  <div id="iw-outer-tap" style="position:absolute;inset:0;cursor:default;z-index:2;"></div>
+  <div id="iw-outer-ring" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:50%;border:2px solid rgba(80,140,60,.28);box-shadow:0 0 0 1px rgba(80,140,60,.08),inset 0 0 0 1px rgba(80,140,60,.08);pointer-events:none;z-index:2;"></div>
+  <div style="position:absolute;top:18px;left:50%;transform:translateX(-50%);color:rgba(176,112,64,.22);font-size:9px;letter-spacing:.22em;text-transform:uppercase;pointer-events:none;white-space:nowrap;z-index:10;">Aloha</div>
+  <div id="iw-close" style="position:absolute;top:24px;right:28px;color:rgba(176,112,64,.35);font-size:11px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;z-index:10;transition:color .2s;">← Community</div>
+  <div id="iw-ring" style="position:relative;border-radius:50%;z-index:3;"></div>
+</div>
+
+<!-- COSMIC PAGE -->
+<div id="cosmic" class="screen" style="background:#070715;opacity:0;pointer-events:none;transition:opacity .6s ease;display:flex;align-items:center;justify-content:center;z-index:55;">
+  <canvas id="cosmic-forest-canvas" style="position:absolute;inset:0;pointer-events:none;z-index:1;"></canvas>
+  <div id="cosmic-outer-tap" style="position:absolute;inset:0;cursor:default;z-index:2;"></div>
+  <div id="cosmic-outer-ring" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:50%;border:2px solid rgba(80,140,60,.28);box-shadow:0 0 0 1px rgba(80,140,60,.08),inset 0 0 0 1px rgba(80,140,60,.08);pointer-events:none;z-index:2;"></div>
+  <div style="position:absolute;top:18px;left:50%;transform:translateX(-50%);color:rgba(100,120,255,.22);font-size:9px;letter-spacing:.22em;text-transform:uppercase;pointer-events:none;white-space:nowrap;z-index:10;">Connect</div>
+  <div id="cosmic-close" style="position:absolute;top:24px;right:28px;color:rgba(176,112,64,.35);font-size:11px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;z-index:10;transition:color .2s;">← Aloha</div>
+  <div id="cosmic-ring" style="position:relative;border-radius:50%;z-index:3;"></div>
+  <div id="cosmic-panel" style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(180deg,rgba(16,5,2,.97),rgba(8,2,1,.99));border-top:1px solid rgba(176,112,64,.2);border-radius:20px 20px 0 0;padding:20px 24px 44px;z-index:20;transform:translateY(100%);transition:transform .35s cubic-bezier(.25,.46,.45,.94);"></div>
+</div>
+
+<!-- COMMUNITY PAGE -->
 <div id="compass">
-  <div id="compass-close">✕</div>
-<div id="compass-ring">
+  <canvas id="compass-forest-canvas"></canvas>
+  <div id="compass-outer-tap"></div>
+  <div id="compass-outer-ring"></div>
+  <div id="compass-level">My Communities</div>
+  <div id="compass-close">← Ohana</div>
+  <div id="compass-ring">
     <div id="compass-orbit"></div>
     <div id="compass-center">
       <div id="compass-center-circle">
@@ -658,11 +721,6 @@
     },
   ];
 
-  // Star positions as [x%, y%] of viewport
-  const MAKALII_STARS = [
-    [21, 53], [25, 52], [19, 57], [23, 57], [27, 56], [21, 61], [25, 60]
-  ];
-
   const EVENTS = [
     { day: '12', month: 'Apr', name: 'Sunrise Ceremony',    detail: 'Diamond Head · 6:00am'      },
     { day: '18', month: 'Apr', name: 'Community Potluck',   detail: 'Kailua Beach Park · 5:00pm' },
@@ -737,8 +795,8 @@
   }
 
   // ── FOREST RING ───────────────────────────────────────────────────────
-  function drawForest(outerR, cx, cy) {
-    const canvas = document.getElementById('forest-canvas');
+  function drawForestOn(canvasId, outerR, cx, cy) {
+    const canvas = document.getElementById(canvasId);
     canvas.width  = innerWidth;
     canvas.height = innerHeight;
     const ctx = canvas.getContext('2d');
@@ -845,7 +903,7 @@
       if (dist > outerR) transitionToDiscovery();
     };
 
-    drawForest(outerDiam / 2, cx, cy);
+    drawForestOn('forest-canvas', outerDiam / 2, cx, cy);
 
     const center = document.getElementById('center');
     const cs = aSize * 2.4;
@@ -881,11 +939,61 @@
     });
   }
 
-  // ── SKY SETUP ─────────────────────────────────────────────────────────
+  // ── SKY / HUB SETUP ──────────────────────────────────────────────────
+  let hubOuterR = 0;
+
   function setupSky() {
     generateBgStars();
     drawMilkyWay();
     drawConstellations();
+    buildHub();
+  }
+
+  function buildHub() {
+    const vmin    = Math.min(innerWidth, innerHeight);
+    const outerD  = vmin * 0.72 * 1.58;
+    const ctrSize = vmin * 0.20;
+    const lblSize = Math.max(9, vmin * 0.024);
+    const cx      = innerWidth / 2, cy = innerHeight / 2;
+    hubOuterR = outerD / 2;
+
+    document.getElementById('hub-outer-ring').style.width =
+    document.getElementById('hub-outer-ring').style.height = outerD + 'px';
+
+    drawForestOn('hub-forest-canvas', hubOuterR, cx, cy);
+
+    // Center button — fire icon → back to Ohana
+    let ctrWrap = document.getElementById('hub-center');
+    if (!ctrWrap) {
+      ctrWrap = document.createElement('div');
+      ctrWrap.id = 'hub-center';
+      document.getElementById('sky-content').appendChild(ctrWrap);
+    }
+    ctrWrap.innerHTML = '';
+    ctrWrap.style.cssText = `position:absolute;left:${cx}px;top:${cy}px;
+      transform:translate(-50%,-50%);display:flex;flex-direction:column;
+      align-items:center;gap:0;z-index:5;cursor:pointer;`;
+
+    const ctr = document.createElement('div');
+    ctr.style.cssText = `width:${ctrSize}px;height:${ctrSize}px;border-radius:50%;
+      background:rgba(40,16,4,.95);border:1px solid rgba(220,120,40,.35);
+      box-shadow:0 0 20px 6px rgba(200,80,20,.2),0 0 50px 18px rgba(180,50,10,.1);
+      display:flex;align-items:center;justify-content:center;transition:box-shadow .2s;`;
+
+    const icon = document.createElement('span');
+    icon.style.cssText = `font-size:${ctrSize * 0.42}px;display:inline-block;
+      animation:heartbeat 2.2s ease-in-out infinite;`;
+    icon.textContent = '🔥';
+    ctr.appendChild(icon);
+
+    const lbl = document.createElement('div');
+    lbl.style.cssText = `color:rgba(200,120,60,.4);font-size:${lblSize}px;
+      letter-spacing:.22em;text-transform:uppercase;margin-top:10px;pointer-events:none;`;
+    lbl.textContent = 'Ohana';
+
+    ctrWrap.appendChild(ctr);
+    ctrWrap.appendChild(lbl);
+    ctrWrap.onclick = e => { e.stopPropagation(); transitionToHome(); };
   }
 
   function generateBgStars() {
@@ -985,46 +1093,6 @@
     // Stop sky-click-to-close from firing while editing
     mission.addEventListener('click', e => e.stopPropagation());
     content.appendChild(mission);
-
-    // ── Home — fire circle constellation (lower left) ─────────────────
-    const mPts = MAKALII_STARS.map(([x, y]) => pct(x, y));
-    const mAllX = mPts.map(pt => pt[0]), mAllY = mPts.map(pt => pt[1]);
-    const mCX   = (Math.min(...mAllX) + Math.max(...mAllX)) / 2;
-    const mCY   = (Math.min(...mAllY) + Math.max(...mAllY)) / 2;
-    const mMaxY = Math.max(...mAllY);
-
-    // Sort stars by angle around centroid so connections form a clean ring
-    const sorted = [...mPts].sort((a, b) =>
-      Math.atan2(a[1] - mCY, a[0] - mCX) - Math.atan2(b[1] - mCY, b[0] - mCX)
-    );
-    sorted.forEach((pt, i) => {
-      const next = sorted[(i + 1) % sorted.length];
-      svgLine(svg, pt[0], pt[1], next[0], next[1], 'rgba(255,185,75,.22)');
-    });
-
-    // Draw dashed circle around the cluster
-    const circR = Math.max(
-      Math.max(...mAllX) - Math.min(...mAllX),
-      Math.max(...mAllY) - Math.min(...mAllY)
-    ) / 2 + 18;
-    const circ = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    circ.setAttribute('cx', mCX); circ.setAttribute('cy', mCY); circ.setAttribute('r', circR);
-    circ.setAttribute('fill', 'none');
-    circ.setAttribute('stroke', 'rgba(255,185,75,.18)');
-    circ.setAttribute('stroke-width', '1');
-    circ.setAttribute('stroke-dasharray', '4 5');
-    svg.appendChild(circ);
-
-    // Draw stars
-    mPts.forEach((pt, i) => {
-      content.appendChild(makeStar(pt[0], pt[1],
-        i === 3 ? 5 : 3, '#ffd580',
-        i === 3 ? '0 0 5px 2px rgba(255,195,75,.6)' : '0 0 3px 1px rgba(255,195,75,.35)'));
-    });
-
-    // Tap zone covers the whole circle
-    content.appendChild(makeTapZone(mCX, mCY, circR * 2, circR * 2, () => transitionToHome(), true));
-    content.appendChild(makeLabel(mCX, mMaxY + circR - (mCY - Math.min(...mAllY)) + 14, 'Home'));
 
     // ── Events — single bright star (right side) ──────────────────────
     const [ex, ey] = pct(75, 38);
@@ -1233,9 +1301,21 @@
 
   // Clicks inside the panel don't bubble up and close it
   document.getElementById('panel').addEventListener('click', e => e.stopPropagation());
-  // Clicking the sky background closes any open panel
-  document.getElementById('sky').addEventListener('click', () => {
-    if (document.getElementById('panel').classList.contains('open')) closePanel();
+  // Sky clicks: forest zone → back to Home; inner area → close open panel
+  document.getElementById('sky').addEventListener('click', e => {
+    const dist = Math.hypot(e.clientX - innerWidth / 2, e.clientY - innerHeight / 2);
+    if (dist > hubOuterR) {
+      transitionToHome();
+    } else if (document.getElementById('panel').classList.contains('open')) {
+      closePanel();
+    }
+  });
+  document.getElementById('sky').addEventListener('mousemove', e => {
+    const dist = Math.hypot(e.clientX - innerWidth / 2, e.clientY - innerHeight / 2);
+    document.getElementById('sky').style.cursor = dist > hubOuterR ? 'pointer' : '';
+  });
+  document.getElementById('sky').addEventListener('mouseleave', () => {
+    document.getElementById('sky').style.cursor = '';
   });
 
   // ── FIRE CANVAS ───────────────────────────────────────────────────────
@@ -1402,13 +1482,35 @@
   }
 
   function buildCompass() {
-    const user    = compassUser || USERS[0];
-    const vmin    = Math.min(innerWidth, innerHeight);
-    const ringD   = vmin * 0.72;
-    const ringR   = ringD / 2;
-    const ptSize  = vmin * 0.14;
-    const ctrSize = vmin * 0.20;
-    const lblSize = Math.max(9, vmin * 0.024);
+    const user     = compassUser || USERS[0];
+    const vmin     = Math.min(innerWidth, innerHeight);
+    const ringD    = vmin * 0.72;
+    const ringR    = ringD / 2;
+    const ptSize   = vmin * 0.14;
+    const ctrSize  = vmin * 0.20;
+    const lblSize  = Math.max(9, vmin * 0.024);
+    const cx       = innerWidth / 2, cy = innerHeight / 2;
+    const outerD   = ringD * 1.58;
+
+    // Outer ring
+    document.getElementById('compass-outer-ring').style.width =
+    document.getElementById('compass-outer-ring').style.height = outerD + 'px';
+
+    // Forest ring — same function as Ohana page
+    drawForestOn('compass-forest-canvas', outerD / 2, cx, cy);
+
+    // Outer tap → back to Ohana
+    const outerTap = document.getElementById('compass-outer-tap');
+    const outerR   = outerD / 2;
+    outerTap.onmousemove = e => {
+      const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
+      outerTap.classList.toggle('forest-hover', dist > outerR);
+    };
+    outerTap.onmouseleave = () => outerTap.classList.remove('forest-hover');
+    outerTap.onclick = e => {
+      const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
+      if (dist > outerR) { closeCompass(); transitionToDiscovery(); }
+    };
 
     const ring = document.getElementById('compass-ring');
     ring.style.width = ring.style.height = ringD + 'px';
@@ -1416,11 +1518,15 @@
     const orbit = document.getElementById('compass-orbit');
     orbit.style.width = orbit.style.height = ringD * 0.86 + 'px';
 
-    // Center — show user's avatar instead of the heart
+    // Center — heart for self, avatar for others
     const ctr = document.getElementById('compass-center-circle');
     ctr.style.width = ctr.style.height = ctrSize + 'px';
     ctr.style.overflow = 'hidden';
-    ctr.innerHTML = makeAvatarSvg(user, ctrSize);
+    if (user.isMe) {
+      ctr.innerHTML = `<span style="font-size:${ctrSize * 0.45}px;color:#e05555;display:inline-block;animation:heartbeat 2.2s ease-in-out infinite;">♥</span>`;
+    } else {
+      ctr.innerHTML = makeAvatarSvg(user, ctrSize);
+    }
 
     // Name below center
     let nameEl = document.getElementById('compass-user-name');
@@ -1432,9 +1538,17 @@
     }
     nameEl.textContent = user.name;
 
-    // Tapping the center avatar shows that user's profile
+    // Center tap: self → Aloha/Innerwork, others → profile sheet
     ctr.style.cursor = 'pointer';
-    ctr.onclick = e => { e.stopPropagation(); showCompassProfile(user); };
+    ctr.onclick = e => {
+      e.stopPropagation();
+      if (user.isMe) {
+        closeCompass();
+        openPage('innerwork');
+      } else {
+        showCompassProfile(user);
+      }
+    };
 
     // Remove old circle points
     ring.querySelectorAll('.compass-point').forEach(el => el.remove());
@@ -1478,7 +1592,11 @@
       wrap.appendChild(lbl);
 
       if (!pt.create) {
-        wrap.onclick = e => { e.stopPropagation(); closeCompass(); };
+        wrap.onclick = e => {
+          e.stopPropagation();
+          closeCompass();
+          // Each community leads to its own Ohana page (home for now)
+        };
       }
 
       ring.appendChild(wrap);
@@ -1528,7 +1646,7 @@
     if (sheet) sheet.remove();
   }
 
-  document.getElementById('compass-close').onclick = closeCompass;
+  document.getElementById('compass-close').addEventListener('click', closeCompass);
   // Removed: clicking blank space no longer closes the overlay
 
   // ── DISCOVERY ─────────────────────────────────────────────────────────
@@ -1543,9 +1661,28 @@
     const ctx  = canvas.getContext('2d');
     ctx.clearRect(0, 0, innerWidth, innerHeight);
 
-    const cx   = innerWidth / 2;
-    const cy   = innerHeight / 2 + innerHeight * 0.04;
-    const maxR = Math.min(innerWidth, innerHeight) * 0.40;
+    const vmin  = Math.min(innerWidth, innerHeight);
+    const cx    = innerWidth / 2;
+    const cy    = innerHeight / 2;
+    const maxR  = vmin * 0.38;
+    const outerD = vmin * 0.72 * 1.58;
+
+    // Forest outer ring — same template
+    document.getElementById('disc-outer-ring').style.width =
+    document.getElementById('disc-outer-ring').style.height = outerD + 'px';
+    drawForestOn('disc-forest-canvas', outerD / 2, cx, cy);
+
+    // Forest tap → back to Cosmic (via disc-content, which sits above outer-tap)
+    const outerR = outerD / 2;
+    content.onmousemove = e => {
+      const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
+      content.style.cursor = dist > outerR ? 'pointer' : 'default';
+    };
+    content.onmouseleave = () => { content.style.cursor = 'default'; };
+    content.onclick = e => {
+      const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
+      if (dist > outerR) transitionFromDiscovery();
+    };
 
     // Proximity rings
     [0.34, 0.67, 1.0].forEach((scale, i) => {
@@ -1603,7 +1740,7 @@
         `animation:hpulse ${(2.2 + Math.random() * 1.8).toFixed(2)}s ease-in-out infinite`,
         `animation-delay:-${(Math.random() * 3).toFixed(2)}s`,
       ].join(';');
-      if (active) fire.onclick = e => { e.stopPropagation(); showDiscPanel(comm); };
+      if (active) fire.onclick = e => { e.stopPropagation(); enterCommunityOhana(comm); };
       content.appendChild(fire);
 
       const lbl = document.createElement('div');
@@ -1640,6 +1777,11 @@
     }
   }
 
+  function enterCommunityOhana(comm) {
+    document.getElementById('discovery').classList.remove('visible');
+    document.getElementById('home').classList.remove('fade-out');
+  }
+
   function transitionToDiscovery() {
     discFilter = 'all';
     buildDiscovery();
@@ -1650,8 +1792,343 @@
 
   function transitionFromDiscovery() {
     document.getElementById('discovery').classList.remove('visible');
-    document.getElementById('home').classList.remove('fade-out');
+    // Only restore home fade if cosmic isn't the destination
+    // (home stays faded while cosmic is open above it)
+    openPage('cosmic');
   }
+
+  // ── INNERWORK / ALOHA PAGE ────────────────────────────────────────────
+  const IW_ITEMS = [
+    { label: 'Journal',      icon: '📖' },
+    { label: 'Meditation',   icon: '🌙' },
+    { label: 'Reflection',   icon: '🌱' },
+    { label: 'Commitments',  icon: '🔥' },
+    { label: 'Patterns',     icon: '✦'  },
+  ];
+
+  function buildInnerwork() {
+    const vmin    = Math.min(innerWidth, innerHeight);
+    const ringD   = vmin * 0.72;
+    const ringR   = ringD / 2;
+    const ptSize  = vmin * 0.14;
+    const ctrSize = vmin * 0.22;
+    const lblSize = Math.max(9, vmin * 0.024);
+    const cx      = innerWidth / 2, cy = innerHeight / 2;
+    const outerD  = ringD * 1.58;
+
+    // Outer ring size
+    document.getElementById('iw-outer-ring').style.width =
+    document.getElementById('iw-outer-ring').style.height = outerD + 'px';
+
+    // Forest ring
+    drawForestOn('iw-forest-canvas', outerD / 2, cx, cy);
+
+    // Outer tap → Cosmic (for now closes back to Community)
+    const outerTap = document.getElementById('iw-outer-tap');
+    const outerR   = outerD / 2;
+    outerTap.onmousemove = e => {
+      const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
+      outerTap.style.cursor = dist > outerR ? 'pointer' : 'default';
+    };
+    outerTap.onmouseleave = () => outerTap.style.cursor = 'default';
+    outerTap.onclick = e => {
+      const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
+      if (dist > outerR) { closePage('innerwork'); openCompass(USERS[0]); }
+    };
+
+    const ring = document.getElementById('iw-ring');
+    ring.style.width = ring.style.height = ringD + 'px';
+    ring.innerHTML = '';
+
+    // Dashed orbit ring
+    const orbit = document.createElement('div');
+    orbit.style.cssText = `position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+      border:1px dashed rgba(176,112,64,.22);border-radius:50%;pointer-events:none;
+      width:${ringD * 0.86}px;height:${ringD * 0.86}px;`;
+    ring.appendChild(orbit);
+
+    // Heart center → Cosmic
+    const ctrWrap = document.createElement('div');
+    ctrWrap.style.cssText = `position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+      display:flex;flex-direction:column;align-items:center;gap:0;z-index:2;cursor:pointer;`;
+
+    const ctr = document.createElement('div');
+    ctr.style.cssText = `width:${ctrSize}px;height:${ctrSize}px;border-radius:50%;
+      background:rgba(40,8,8,.95);border:1px solid rgba(220,80,80,.35);
+      box-shadow:0 0 20px 6px rgba(200,50,50,.2),0 0 50px 18px rgba(180,30,30,.1);
+      display:flex;align-items:center;justify-content:center;
+      transition:box-shadow .2s;`;
+
+    const star = document.createElement('span');
+    star.style.cssText = `font-size:${ctrSize * 0.42}px;color:#8899ff;display:inline-block;animation:starPulse 2.8s ease-in-out infinite;`;
+    star.textContent = '✦';
+    ctr.style.background = 'rgba(8,8,40,.95)';
+    ctr.style.border = '1px solid rgba(100,120,255,.35)';
+    ctr.style.boxShadow = '0 0 20px 6px rgba(80,100,255,.2),0 0 50px 18px rgba(60,80,220,.1)';
+    ctr.appendChild(star);
+
+    const ctrLbl = document.createElement('div');
+    ctrLbl.style.cssText = `color:rgba(120,140,255,.4);font-size:9px;letter-spacing:.22em;text-transform:uppercase;margin-top:10px;pointer-events:none;`;
+    ctrLbl.textContent = 'Cosmic';
+
+    ctrWrap.appendChild(ctr);
+    ctrWrap.appendChild(ctrLbl);
+    ctrWrap.onclick = e => { e.stopPropagation(); openPage('cosmic'); };
+    ring.appendChild(ctrWrap);
+
+    // Practice items around the ring
+    IW_ITEMS.forEach((item, i) => {
+      const angle = -Math.PI / 2 + (2 * Math.PI / IW_ITEMS.length) * i;
+      const px    = ringR + Math.cos(angle) * ringR * 0.86;
+      const py    = ringR + Math.sin(angle) * ringR * 0.86;
+
+      const wrap = document.createElement('div');
+      wrap.className = 'compass-point';
+      wrap.style.left = px + 'px';
+      wrap.style.top  = py + 'px';
+      wrap.style.cursor = 'pointer';
+
+      const circ = document.createElement('div');
+      circ.className = 'compass-point-circle';
+      circ.style.width = circ.style.height = ptSize + 'px';
+
+      const icon = document.createElement('span');
+      icon.className      = 'compass-point-icon';
+      icon.style.fontSize = (ptSize * 0.38) + 'px';
+      icon.textContent    = item.icon;
+
+      const lbl = document.createElement('div');
+      lbl.className      = 'compass-point-label';
+      lbl.style.fontSize = lblSize + 'px';
+      lbl.textContent    = item.label;
+
+      circ.appendChild(icon);
+      wrap.appendChild(circ);
+      wrap.appendChild(lbl);
+      wrap.onclick = e => e.stopPropagation(); // placeholder
+      ring.appendChild(wrap);
+    });
+  }
+
+  // ── COSMIC PAGE ───────────────────────────────────────────────────────
+  const COSMIC_ITEMS = [
+    { label: 'Events',    icon: '🌟', type: 'events'   },
+    { label: 'Meet Up',   icon: '🤝', type: 'meetup'   },
+    { label: 'Gathering', icon: '🔥', type: 'gathering' },
+    { label: 'New Ohana', icon: '🌺', type: 'ohana'    },
+  ];
+
+  function buildCosmic() {
+    const vmin   = Math.min(innerWidth, innerHeight);
+    const ringD  = vmin * 0.72;
+    const ringR  = ringD / 2;
+    const ptSize = vmin * 0.14;
+    const ctrSize= vmin * 0.22;
+    const lblSize= Math.max(9, vmin * 0.024);
+    const cx     = innerWidth / 2, cy = innerHeight / 2;
+    const outerD = ringD * 1.58;
+
+    document.getElementById('cosmic-outer-ring').style.width =
+    document.getElementById('cosmic-outer-ring').style.height = outerD + 'px';
+
+    drawForestOn('cosmic-forest-canvas', outerD / 2, cx, cy);
+
+    // Outer tap — cursor + forest/panel logic set below after ring is built
+    const outerTap = document.getElementById('cosmic-outer-tap');
+    const outerR   = outerD / 2;
+    outerTap.onmousemove = e => {
+      const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
+      outerTap.style.cursor = dist > outerR ? 'pointer' : 'default';
+    };
+    outerTap.onmouseleave = () => outerTap.style.cursor = 'default';
+
+    const ring = document.getElementById('cosmic-ring');
+    ring.style.width = ring.style.height = ringD + 'px';
+    ring.innerHTML = '';
+
+    // Dashed orbit ring
+    const orbit = document.createElement('div');
+    orbit.style.cssText = `position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+      border:1px dashed rgba(100,120,255,.18);border-radius:50%;pointer-events:none;
+      width:${ringD * 0.86}px;height:${ringD * 0.86}px;`;
+    ring.appendChild(orbit);
+
+    // Globe center → Global
+    const ctrWrap = document.createElement('div');
+    ctrWrap.style.cssText = `position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+      display:flex;flex-direction:column;align-items:center;gap:0;z-index:2;cursor:pointer;`;
+
+    const ctr = document.createElement('div');
+    ctr.style.cssText = `width:${ctrSize}px;height:${ctrSize}px;border-radius:50%;
+      background:rgba(4,8,28,.95);border:1px solid rgba(60,120,200,.35);
+      box-shadow:0 0 20px 6px rgba(40,80,200,.2),0 0 50px 18px rgba(20,60,180,.1);
+      display:flex;align-items:center;justify-content:center;transition:box-shadow .2s;`;
+
+    const globe = document.createElement('div');
+    globe.style.cssText = `width:${ctrSize*.62}px;height:${ctrSize*.62}px;display:inline-block;animation:starPulse 3.5s ease-in-out infinite;`;
+    globe.innerHTML = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+      <circle cx="50" cy="50" r="46" fill="rgba(10,30,80,.9)" stroke="rgba(60,120,220,.5)" stroke-width="2"/>
+      <ellipse cx="50" cy="50" rx="20" ry="46" fill="none" stroke="rgba(60,160,220,.3)" stroke-width="1.2"/>
+      <ellipse cx="50" cy="50" rx="46" ry="16" fill="none" stroke="rgba(60,160,220,.3)" stroke-width="1.2"/>
+      <ellipse cx="50" cy="50" rx="46" ry="30" fill="none" stroke="rgba(60,160,220,.2)" stroke-width="1"/>
+      <path d="M18 35 Q30 28 38 38 Q44 30 55 32 Q60 22 72 26 Q80 34 76 44 Q68 40 60 48 Q52 42 44 50 Q34 46 28 54 Q20 46 18 35Z" fill="rgba(30,160,80,.55)"/>
+      <path d="M24 62 Q32 56 42 60 Q48 68 40 72 Q30 70 24 62Z" fill="rgba(30,160,80,.45)"/>
+      <path d="M60 55 Q70 50 78 58 Q74 66 64 64 Q58 60 60 55Z" fill="rgba(30,160,80,.45)"/>
+    </svg>`;
+    ctr.appendChild(globe);
+
+    const ctrLbl = document.createElement('div');
+    ctrLbl.style.cssText = `color:rgba(60,120,220,.4);font-size:9px;letter-spacing:.22em;text-transform:uppercase;margin-top:10px;pointer-events:none;`;
+    ctrLbl.textContent = 'Global';
+
+    ctrWrap.appendChild(ctr);
+    ctrWrap.appendChild(ctrLbl);
+    ctrWrap.onclick = e => { e.stopPropagation(); closePage('cosmic'); transitionToDiscovery(); };
+    ring.appendChild(ctrWrap);
+
+    // Cosmic practice items
+    COSMIC_ITEMS.forEach((item, i) => {
+      const angle = -Math.PI / 2 + (2 * Math.PI / COSMIC_ITEMS.length) * i;
+      const px    = ringR + Math.cos(angle) * ringR * 0.86;
+      const py    = ringR + Math.sin(angle) * ringR * 0.86;
+
+      const wrap = document.createElement('div');
+      wrap.className = 'compass-point';
+      wrap.style.left = px + 'px';
+      wrap.style.top  = py + 'px';
+      wrap.style.cursor = 'pointer';
+
+      const circ = document.createElement('div');
+      circ.className = 'compass-point-circle';
+      circ.style.width = circ.style.height = ptSize + 'px';
+      circ.style.borderColor = 'rgba(80,100,255,.3)';
+
+      const icon = document.createElement('span');
+      icon.className      = 'compass-point-icon';
+      icon.style.fontSize = (ptSize * 0.38) + 'px';
+      icon.textContent    = item.icon;
+
+      const lbl = document.createElement('div');
+      lbl.className      = 'compass-point-label';
+      lbl.style.fontSize = lblSize + 'px';
+      lbl.style.color    = 'rgba(120,140,255,.6)';
+      lbl.textContent    = item.label;
+
+      circ.appendChild(icon);
+      wrap.appendChild(circ);
+      wrap.appendChild(lbl);
+      wrap.onclick = e => { e.stopPropagation(); openCosmicPanel(item.type); };
+      ring.appendChild(wrap);
+    });
+
+    // Tapping cosmic background collapses open panel
+    document.getElementById('cosmic-outer-tap').onclick = e => {
+      const panel = document.getElementById('cosmic-panel');
+      if (panel.style.transform === 'translateY(0px)' || panel.style.transform === 'translateY(0)') {
+        panel.style.transform = 'translateY(100%)';
+      } else {
+        const dist = Math.hypot(e.clientX - innerWidth/2, e.clientY - innerHeight/2);
+        const outerR = parseFloat(document.getElementById('cosmic-outer-ring').style.width) / 2;
+        if (dist > outerR) { closePage('cosmic'); openPage('innerwork'); }
+      }
+    };
+  }
+
+  function openCosmicPanel(type) {
+    const panel = document.getElementById('cosmic-panel');
+    const me = USERS.find(u => u.isMe);
+
+    if (type === 'events') {
+      panel.innerHTML = `
+        <div style="width:36px;height:4px;background:rgba(176,112,64,.22);border-radius:2px;margin:0 auto 18px;"></div>
+        <div style="color:#b07040;font-size:12px;letter-spacing:.18em;text-transform:uppercase;text-align:center;margin-bottom:18px;">Nearby Events</div>
+        ${EVENTS.map(ev => `
+          <div style="display:flex;gap:14px;align-items:flex-start;padding:13px 0;border-bottom:1px solid rgba(176,112,64,.1);">
+            <div>
+              <div style="color:#b07040;font-size:22px;font-weight:300;line-height:1;">${ev.day}</div>
+              <div style="color:#4a2808;font-size:10px;text-transform:uppercase;letter-spacing:.08em;">${ev.month}</div>
+            </div>
+            <div>
+              <div style="color:#d8a060;font-size:15px;margin-bottom:3px;">${ev.name}</div>
+              <div style="color:#5a3018;font-size:12px;">${ev.detail}</div>
+            </div>
+          </div>`).join('')}
+      `;
+    } else if (type === 'meetup') {
+      const others = USERS.filter(u => !u.isMe);
+      const suggestion = others[Math.floor(Math.random() * others.length)];
+      const sz = 52;
+      panel.innerHTML = `
+        <div style="width:36px;height:4px;background:rgba(176,112,64,.22);border-radius:2px;margin:0 auto 18px;"></div>
+        <div style="color:#b07040;font-size:12px;letter-spacing:.18em;text-transform:uppercase;text-align:center;margin-bottom:6px;">Someone to Meet</div>
+        <p style="color:rgba(176,112,64,.35);font-size:11px;text-align:center;margin-bottom:20px;letter-spacing:.06em;">You haven't connected with this person in a while</p>
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;">
+          <div style="width:${sz}px;height:${sz}px;border-radius:50%;border:1px solid rgba(176,112,64,.3);overflow:hidden;flex-shrink:0;">${makeAvatarSvg(suggestion, sz)}</div>
+          <div>
+            <div style="color:#d8a060;font-size:17px;margin-bottom:3px;">${suggestion.name}</div>
+            <div style="color:rgba(176,112,64,.4);font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;">${suggestion.role}</div>
+            <div style="color:#c8904e;font-size:13px;line-height:1.6;">${suggestion.bio}</div>
+          </div>
+        </div>
+        <div style="text-align:center;">
+          <div style="display:inline-block;padding:11px 28px;border:1px solid rgba(176,112,64,.3);border-radius:24px;color:#b07040;font-size:11px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;">Send a Message</div>
+        </div>
+      `;
+    } else if (type === 'gathering') {
+      panel.innerHTML = `
+        <div style="width:36px;height:4px;background:rgba(176,112,64,.22);border-radius:2px;margin:0 auto 18px;"></div>
+        <div style="color:#b07040;font-size:12px;letter-spacing:.18em;text-transform:uppercase;text-align:center;margin-bottom:18px;">Open Gatherings</div>
+        ${[
+          { name: 'Morning Circle',      detail: 'Daily · Sunrise · Fire Pit',        open: true  },
+          { name: 'Communal Dinner',     detail: 'Tonight · 6pm · Main Hall',          open: true  },
+          { name: 'Work Party — Garden', detail: 'Saturday · 8am · Lower Field',       open: true  },
+          { name: 'Story Night',         detail: 'Friday · 7pm · 4 spots remaining',   open: false },
+        ].map(g => `
+          <div style="display:flex;align-items:center;gap:14px;padding:13px 0;border-bottom:1px solid rgba(176,112,64,.1);">
+            <div style="width:8px;height:8px;border-radius:50%;background:${g.open ? 'rgba(100,200,100,.7)' : 'rgba(200,150,60,.5)'};flex-shrink:0;margin-top:2px;"></div>
+            <div style="flex:1;">
+              <div style="color:#d8a060;font-size:15px;margin-bottom:3px;">${g.name}</div>
+              <div style="color:#5a3018;font-size:12px;">${g.detail}</div>
+            </div>
+            <div style="color:rgba(176,112,64,.35);font-size:18px;">›</div>
+          </div>`).join('')}
+      `;
+    } else if (type === 'ohana') {
+      const suggestions = COMMUNITIES.filter(c => !c.isMe).slice(0, 3);
+      panel.innerHTML = `
+        <div style="width:36px;height:4px;background:rgba(176,112,64,.22);border-radius:2px;margin:0 auto 18px;"></div>
+        <div style="color:#b07040;font-size:12px;letter-spacing:.18em;text-transform:uppercase;text-align:center;margin-bottom:6px;">Explore a New Ohana</div>
+        <p style="color:rgba(176,112,64,.35);font-size:11px;text-align:center;margin-bottom:20px;letter-spacing:.06em;">Communities that share your values</p>
+        ${suggestions.map(c => `
+          <div style="padding:14px 0;border-bottom:1px solid rgba(176,112,64,.1);">
+            <div style="color:#d8a060;font-size:15px;margin-bottom:4px;">${c.name}</div>
+            <div style="color:#5a3018;font-size:12px;line-height:1.55;margin-bottom:10px;">${c.desc}</div>
+            <div style="color:rgba(176,112,64,.4);font-size:10px;letter-spacing:.1em;text-transform:uppercase;">${c.members} members</div>
+          </div>`).join('')}
+      `;
+    }
+
+    panel.onclick = e => e.stopPropagation();
+    panel.getBoundingClientRect();
+    panel.style.transform = 'translateY(0)';
+  }
+
+  function openPage(id) {
+    if (id === 'innerwork') buildInnerwork();
+    if (id === 'cosmic')    buildCosmic();
+    const el = document.getElementById(id);
+    el.style.opacity = '1';
+    el.style.pointerEvents = 'all';
+  }
+
+  function closePage(id) {
+    const el = document.getElementById(id);
+    el.style.opacity = '0';
+    el.style.pointerEvents = 'none';
+  }
+
+  document.getElementById('iw-close').addEventListener('click', () => { closePage('innerwork'); openCompass(USERS[0]); });
+  document.getElementById('cosmic-close').addEventListener('click', () => { closePage('cosmic'); openPage('innerwork'); });
 
   // ── INIT ──────────────────────────────────────────────────────────────
   layout();
@@ -1667,7 +2144,7 @@
   });
 
   window.addEventListener('resize', () => {
-    layout(); drawMilkyWay(); drawConstellations();
+    layout(); drawMilkyWay(); drawConstellations(); buildHub();
     if (document.getElementById('compass').classList.contains('open')) buildCompass();
     if (document.getElementById('discovery').classList.contains('visible')) buildDiscovery();
   });
