@@ -293,7 +293,7 @@
 </div>
 
 <!-- INTENTION PAGE -->
-<div id="innerwork" class="screen" style="background:#111;opacity:0;pointer-events:none;transition:opacity .6s ease;display:flex;align-items:center;justify-content:center;z-index:50;">
+<div id="innerwork" class="screen" style="background:#020803;opacity:0;pointer-events:none;transition:opacity .6s ease;display:flex;align-items:center;justify-content:center;z-index:50;">
   <canvas id="iw-forest-canvas" style="position:absolute;inset:0;pointer-events:none;z-index:1;"></canvas>
   <div id="iw-outer-tap" style="position:absolute;inset:0;cursor:default;z-index:2;"></div>
   <div id="iw-outer-ring" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:50%;border:2px solid rgba(80,140,60,.28);box-shadow:0 0 0 1px rgba(80,140,60,.08),inset 0 0 0 1px rgba(80,140,60,.08);pointer-events:none;z-index:2;"></div>
@@ -571,7 +571,7 @@
       circle.innerHTML = makeAvatarSvg(user, aSize);
       circle.onclick = e => {
         e.stopPropagation();
-        if (user.isMe) { transitionToDiscovery(); } else { showMemberProfile(user); }
+        if (user.isMe) { openPage('innerwork'); } else { showMemberProfile(user); }
       };
 
       const label = document.createElement('div');
@@ -1078,33 +1078,27 @@
   }
 
   // ── INNERWORK / ALOHA PAGE ────────────────────────────────────────────
-  const IW_ITEMS = [
-    { label: 'Journal',      icon: '📖', type: 'journal'     },
-    { label: 'Meditation',   icon: '🌙', type: 'meditation'  },
-    { label: 'Commitments',  icon: '🌿', type: 'commitments' },
-    { label: 'Chat',         icon: '🔥', type: 'chat'        },
+  const CHAKRAS = [
+    { id: 'crown',  label: 'Meditation',  color: '#c4a0ff', glow: 'rgba(160,120,255,.4)', type: 'meditation'  },
+    { id: 'eye',    label: 'Journal',     color: '#8080ff', glow: 'rgba(80,80,255,.4)',   type: 'journal'     },
+    { id: 'throat', label: 'Chat',        color: '#50b8ff', glow: 'rgba(40,140,255,.4)',  type: 'chat'        },
+    { id: 'heart',  label: '',            color: '#60e060', glow: 'rgba(40,190,40,.5)',   type: 'cosmic'      },
+    { id: 'solar',  label: 'Commitments', color: '#f0d040', glow: 'rgba(210,170,20,.4)', type: 'commitments' },
+    { id: 'sacral', label: 'Create',      color: '#ff9840', glow: 'rgba(230,120,20,.4)', type: 'create'      },
+    { id: 'root',   label: 'Ground',      color: '#ff6868', glow: 'rgba(200,50,50,.4)',  type: 'ground'      },
   ];
 
   function buildInnerwork() {
-    const vmin    = Math.min(innerWidth, innerHeight);
-    const ringD   = vmin * 0.72;
-    const ringR   = ringD / 2;
-    const ptSize  = vmin * 0.14;
-    const ctrSize = vmin * 0.22;
-    const lblSize = Math.max(9, vmin * 0.024);
-    const cx      = innerWidth / 2, cy = innerHeight / 2;
-    const outerD  = ringD * 1.58;
+    const vmin   = Math.min(innerWidth, innerHeight);
+    const cx     = innerWidth / 2, cy = innerHeight / 2;
+    const outerD = vmin * 1.14;
+    const outerR = outerD / 2;
 
-    // Outer ring size
     document.getElementById('iw-outer-ring').style.width =
     document.getElementById('iw-outer-ring').style.height = outerD + 'px';
+    drawForestOn('iw-forest-canvas', outerR, cx, cy);
 
-    // Forest ring
-    drawForestOn('iw-forest-canvas', outerD / 2, cx, cy);
-
-    // Outer tap → Cosmic (for now closes back to Community)
     const outerTap = document.getElementById('iw-outer-tap');
-    const outerR   = outerD / 2;
     outerTap.onmousemove = e => {
       const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
       outerTap.style.cursor = dist > outerR ? 'pointer' : 'default';
@@ -1114,83 +1108,159 @@
       const panel = document.getElementById('iw-panel');
       const panelOpen = panel.style.transform === 'translateY(0px)' || panel.style.transform === 'translateY(0)';
       const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
-      if (panelOpen) {
-        panel.style.transform = 'translateY(100%)';
-      } else if (dist > outerR) {
-        closePage('innerwork');
-      }
+      if (panelOpen) { panel.style.transform = 'translateY(100%)'; }
+      else if (dist > outerR) { closePage('innerwork'); }
     };
 
     const ring = document.getElementById('iw-ring');
-    ring.style.width = ring.style.height = ringD + 'px';
+    ring.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;z-index:3;';
     ring.innerHTML = '';
 
-    // Dashed orbit ring
-    const orbit = document.createElement('div');
-    orbit.style.cssText = `position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-      border:1px dashed rgba(176,112,64,.22);border-radius:50%;pointer-events:none;
-      width:${ringD * 0.86}px;height:${ringD * 0.86}px;`;
-    ring.appendChild(orbit);
+    // Layout: 7 chakras in zigzag, heart at center
+    // xMult: 0=crown(center), 1=eye(left), 2=throat(right),
+    //        3=heart(center), 4=solar(left), 5=sacral(right), 6=root(center)
+    const spineH   = vmin * 0.72;
+    const spineTop = cy - spineH / 2;
+    const step     = spineH / 6;
+    const offset   = vmin * 0.22;
+    const nodeD    = vmin * 0.082;
+    const heartD   = vmin * 0.13;
+    const xMult    = [0, -1, 1, 0, -1, 1, 0];
 
-    // Heart center → Cosmic
-    const ctrWrap = document.createElement('div');
-    ctrWrap.style.cssText = `position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-      display:flex;flex-direction:column;align-items:center;gap:0;z-index:2;cursor:pointer;`;
+    const pts = CHAKRAS.map((ch, i) => ({
+      ch,
+      x: cx + xMult[i] * offset,
+      y: spineTop + i * step,
+      d: ch.id === 'heart' ? heartD : nodeD,
+    }));
 
-    const ctr = document.createElement('div');
-    ctr.style.cssText = `width:${ctrSize}px;height:${ctrSize}px;border-radius:50%;
-      background:rgba(40,8,8,.95);border:1px solid rgba(220,80,80,.35);
-      box-shadow:0 0 20px 6px rgba(200,50,50,.2),0 0 50px 18px rgba(180,30,30,.1);
-      display:flex;align-items:center;justify-content:center;
-      transition:box-shadow .2s;`;
+    // SVG lightning bolt connecting all chakra points
+    const NS  = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(NS, 'svg');
+    svg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1;overflow:visible;';
 
-    const star = document.createElement('span');
-    star.style.cssText = `font-size:${ctrSize * 0.42}px;color:#8899ff;display:inline-block;animation:starPulse 2.8s ease-in-out infinite;`;
-    star.textContent = '✦';
-    ctr.style.background = 'rgba(8,8,40,.95)';
-    ctr.style.border = '1px solid rgba(100,120,255,.35)';
-    ctr.style.boxShadow = '0 0 20px 6px rgba(80,100,255,.2),0 0 50px 18px rgba(60,80,220,.1)';
-    ctr.appendChild(star);
+    const defs = document.createElementNS(NS, 'defs');
+    const grad = document.createElementNS(NS, 'linearGradient');
+    grad.setAttribute('id', 'chakra-bolt');
+    grad.setAttribute('gradientUnits', 'userSpaceOnUse');
+    grad.setAttribute('x1', cx);  grad.setAttribute('y1', pts[6].y); // root (bottom)
+    grad.setAttribute('x2', cx);  grad.setAttribute('y2', pts[0].y); // crown (top)
+    [
+      [0,    '#ff6868', .55],
+      [0.17, '#ff9840', .5 ],
+      [0.33, '#f0d040', .5 ],
+      [0.5,  '#60e060', .65],
+      [0.67, '#50b8ff', .5 ],
+      [0.83, '#8080ff', .5 ],
+      [1,    '#c4a0ff', .55],
+    ].forEach(([off, color, op]) => {
+      const stop = document.createElementNS(NS, 'stop');
+      stop.setAttribute('offset', off);
+      stop.setAttribute('stop-color', color);
+      stop.setAttribute('stop-opacity', op);
+      grad.appendChild(stop);
+    });
+    defs.appendChild(grad);
+    svg.appendChild(defs);
 
-    const ctrLbl = document.createElement('div');
-    ctrLbl.style.cssText = `color:rgba(120,140,255,.4);font-size:9px;letter-spacing:.22em;text-transform:uppercase;margin-top:10px;pointer-events:none;`;
-    ctrLbl.textContent = 'Cosmic';
+    const bolt = document.createElementNS(NS, 'polyline');
+    bolt.setAttribute('points', pts.map(p => `${p.x},${p.y}`).join(' '));
+    bolt.setAttribute('stroke', 'url(#chakra-bolt)');
+    bolt.setAttribute('stroke-width', '1.5');
+    bolt.setAttribute('fill', 'none');
+    bolt.setAttribute('stroke-linecap', 'round');
+    bolt.setAttribute('stroke-linejoin', 'round');
+    svg.appendChild(bolt);
+    ring.appendChild(svg);
 
-    ctrWrap.appendChild(ctr);
-    ctrWrap.appendChild(ctrLbl);
-    ctrWrap.onclick = e => { e.stopPropagation(); openPage('cosmic'); };
-    ring.appendChild(ctrWrap);
+    // Chakra nodes
+    pts.forEach(({ ch, x, y, d }, i) => {
+      const isHeart = ch.id === 'heart';
+      const onRight = xMult[i] >= 0;
 
-    // Practice items around the ring
-    IW_ITEMS.forEach((item, i) => {
-      const angle = -Math.PI / 2 + (2 * Math.PI / IW_ITEMS.length) * i;
-      const px    = ringR + Math.cos(angle) * ringR * 0.86;
-      const py    = ringR + Math.sin(angle) * ringR * 0.86;
+      const node = document.createElement('div');
+      node.style.cssText = `
+        position:absolute;left:${x}px;top:${y}px;
+        transform:translate(-50%,-50%);
+        width:${d}px;height:${d}px;border-radius:50%;
+        background:rgba(2,8,3,.94);
+        border:1px solid ${ch.color}44;
+        box-shadow:0 0 ${isHeart ? 26 : 14}px ${isHeart ? 10 : 4}px ${ch.glow};
+        display:flex;align-items:center;justify-content:center;
+        cursor:pointer;z-index:2;
+        ${isHeart ? 'animation:heartbeat 3s ease-in-out infinite;' : ''}`;
+
+      const dot = document.createElement('div');
+      dot.style.cssText = `
+        width:${d * (isHeart ? 0.36 : 0.42)}px;
+        height:${d * (isHeart ? 0.36 : 0.42)}px;
+        border-radius:50%;background:${ch.color};
+        opacity:${isHeart ? 0.9 : 0.65};pointer-events:none;`;
+      node.appendChild(dot);
+
+      if (ch.label) {
+        const lbl = document.createElement('div');
+        lbl.style.cssText = `
+          position:absolute;
+          ${onRight
+            ? `left:calc(50% + ${d * 0.64}px);text-align:left;`
+            : `right:calc(50% + ${d * 0.64}px);text-align:right;`}
+          top:50%;transform:translateY(-50%);
+          color:${ch.color}80;font-size:${Math.max(9, vmin * 0.023)}px;
+          letter-spacing:.14em;text-transform:uppercase;
+          white-space:nowrap;pointer-events:none;`;
+        lbl.textContent = ch.label;
+        node.appendChild(lbl);
+      }
+
+      node.onclick = isHeart
+        ? e => { e.stopPropagation(); openPage('cosmic'); }
+        : e => { e.stopPropagation(); openIntentionPanel(ch.type); };
+
+      ring.appendChild(node);
+    });
+
+    // Communities floating on the outer ring
+    const me      = USERS.find(u => u.isMe);
+    const circles = me ? me.circles.filter(c => !c.create) : [];
+    circles.forEach((circ, i) => {
+      const angle = -Math.PI / 2 + (2 * Math.PI / circles.length) * i;
+      const nx = cx + Math.cos(angle) * outerR * 0.84;
+      const ny = cy + Math.sin(angle) * outerR * 0.84;
 
       const wrap = document.createElement('div');
-      wrap.className = 'compass-point';
-      wrap.style.left = px + 'px';
-      wrap.style.top  = py + 'px';
-      wrap.style.cursor = 'pointer';
+      wrap.style.cssText = `
+        position:absolute;left:${nx}px;top:${ny}px;
+        transform:translate(-50%,-50%);
+        display:flex;flex-direction:column;align-items:center;gap:3px;
+        cursor:pointer;z-index:4;`;
 
-      const circ = document.createElement('div');
-      circ.className = 'compass-point-circle';
-      circ.style.width = circ.style.height = ptSize + 'px';
-
-      const icon = document.createElement('span');
-      icon.className      = 'compass-point-icon';
-      icon.style.fontSize = (ptSize * 0.38) + 'px';
-      icon.textContent    = item.icon;
+      const fire = document.createElement('div');
+      fire.style.cssText = `
+        width:30px;height:30px;border-radius:50%;
+        background:rgba(2,8,3,.92);border:1px solid rgba(80,180,80,.22);
+        box-shadow:0 0 14px 5px rgba(50,150,50,.18);
+        display:flex;align-items:center;justify-content:center;
+        font-size:13px;transition:box-shadow .2s,border-color .2s;`;
+      fire.textContent = circ.icon;
 
       const lbl = document.createElement('div');
-      lbl.className      = 'compass-point-label';
-      lbl.style.fontSize = lblSize + 'px';
-      lbl.textContent    = item.label;
+      lbl.style.cssText = `
+        color:rgba(80,180,80,.44);font-size:8px;letter-spacing:.12em;
+        text-transform:uppercase;white-space:nowrap;pointer-events:none;`;
+      lbl.textContent = circ.label;
 
-      circ.appendChild(icon);
-      wrap.appendChild(circ);
+      wrap.appendChild(fire);
       wrap.appendChild(lbl);
-      wrap.onclick = e => { e.stopPropagation(); openIntentionPanel(item.type); };
+      wrap.addEventListener('mouseenter', () => {
+        fire.style.boxShadow = '0 0 20px 8px rgba(70,200,70,.3)';
+        fire.style.borderColor = 'rgba(90,210,90,.42)';
+      });
+      wrap.addEventListener('mouseleave', () => {
+        fire.style.boxShadow = '0 0 14px 5px rgba(50,150,50,.18)';
+        fire.style.borderColor = 'rgba(80,180,80,.22)';
+      });
+      wrap.onclick = e => { e.stopPropagation(); closePage('innerwork'); };
       ring.appendChild(wrap);
     });
   }
@@ -1329,6 +1399,22 @@
       };
       document.getElementById('iw-chat-send').onclick = send;
       document.getElementById('iw-chat-input').addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+
+    } else if (type === 'create') {
+      panel.innerHTML = `
+        <div style="width:36px;height:4px;background:rgba(255,152,64,.18);border-radius:2px;margin:0 auto 18px;"></div>
+        <div style="color:rgba(255,152,64,.35);font-size:12px;letter-spacing:.12em;text-transform:uppercase;text-align:center;margin-bottom:16px;">Create</div>
+        <p style="color:rgba(255,152,64,.52);font-size:16px;line-height:1.7;text-align:center;font-style:italic;font-weight:300;">What wants to be made through you today?</p>
+      `;
+      panel.onclick = e => e.stopPropagation();
+
+    } else if (type === 'ground') {
+      panel.innerHTML = `
+        <div style="width:36px;height:4px;background:rgba(255,104,104,.18);border-radius:2px;margin:0 auto 18px;"></div>
+        <div style="color:rgba(255,104,104,.35);font-size:12px;letter-spacing:.12em;text-transform:uppercase;text-align:center;margin-bottom:16px;">Ground</div>
+        <p style="color:rgba(255,104,104,.52);font-size:16px;line-height:1.7;text-align:center;font-style:italic;font-weight:300;">Feel your feet. Feel the earth beneath you. You are here.</p>
+      `;
+      panel.onclick = e => e.stopPropagation();
     }
 
     panel.getBoundingClientRect();
