@@ -78,134 +78,6 @@
     }
 
     /* ── COMMUNITY PAGE ──────────────────────────────────────────────── */
-    #compass {
-      display: none;
-      position: fixed;
-      inset: 0;
-      z-index: 100;
-      background: #111;
-      align-items: center;
-      justify-content: center;
-    }
-    #compass.open { display: flex; }
-
-    #compass-forest-canvas {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      z-index: 1;
-    }
-    #compass-outer-ring {
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      border-radius: 50%;
-      border: 2px solid rgba(80,140,60,.28);
-      box-shadow: 0 0 0 1px rgba(80,140,60,.08), inset 0 0 0 1px rgba(80,140,60,.08);
-      pointer-events: none;
-      z-index: 2;
-    }
-    #compass-outer-tap {
-      position: absolute;
-      inset: 0;
-      cursor: default;
-      z-index: 2;
-    }
-    #compass-outer-tap.forest-hover { cursor: pointer; }
-    #compass-level {
-      position: absolute;
-      top: 18px; left: 50%; transform: translateX(-50%);
-      color: rgba(176,112,64,.22);
-      font-size: 9px; letter-spacing: .22em; text-transform: uppercase;
-      pointer-events: none; white-space: nowrap; z-index: 10;
-    }
-    #compass-close {
-      position: absolute;
-      top: 24px; right: 28px;
-      color: rgba(176,112,64,.35);
-      font-size: 11px; letter-spacing: .18em; text-transform: uppercase;
-      cursor: pointer; z-index: 10; transition: color 0.2s;
-    }
-    #compass-close:hover { color: rgba(176,112,64,.7); }
-
-    #compass-ring {
-      position: relative;
-      border-radius: 50%;
-      z-index: 3;
-    }
-
-    .compass-point {
-      position: absolute;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 7px;
-      transform: translate(-50%, -50%);
-      cursor: pointer;
-    }
-    .compass-point-circle {
-      border-radius: 50%;
-      background: rgba(40,18,4,.9);
-      border: 1px solid rgba(176,112,64,.3);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-    .compass-point:hover .compass-point-circle {
-      border-color: rgba(255,180,60,.6);
-      box-shadow: 0 0 14px 4px rgba(255,140,30,.25);
-    }
-    .compass-point-label {
-      color: #b07040;
-      font-size: 11px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      white-space: nowrap;
-      pointer-events: none;
-    }
-    .compass-point-icon {
-      font-size: 22px;
-      line-height: 1;
-    }
-
-    /* Innerwork — heart center */
-    #compass-center {
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      cursor: pointer;
-      z-index: 2;
-    }
-    #compass-center-circle {
-      border-radius: 50%;
-      background: rgba(40,8,8,.95);
-      border: 1px solid rgba(220,80,80,.35);
-      box-shadow: 0 0 20px 6px rgba(200,50,50,.2), 0 0 50px 18px rgba(180,30,30,.1);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: box-shadow 0.2s;
-    }
-    #compass-center:hover #compass-center-circle {
-      box-shadow: 0 0 28px 10px rgba(220,60,60,.35), 0 0 60px 24px rgba(200,40,40,.2);
-    }
-    #compass-heart { color: #e05555; }
-
-    /* Dashed orbit ring — mirrors the home screen */
-    #compass-orbit {
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      border: 1px dashed rgba(176,112,64,.22);
-      border-radius: 50%;
-      pointer-events: none;
-    }
-
     @keyframes starPulse {
       0%, 100% { transform: scale(1) rotate(0deg);   opacity: .85; }
       50%       { transform: scale(1.18) rotate(15deg); opacity: 1;   }
@@ -220,24 +92,6 @@
       56%  { transform: scale(1);    }
       100% { transform: scale(1);    }
     }
-    #compass-heart {
-      display: inline-block;
-      animation: heartbeat 2.2s ease-in-out infinite;
-      transform-origin: center;
-    }
-
-    #compass-close {
-      position: absolute;
-      top: 28px; right: 28px;
-      color: rgba(176,112,64,.4);
-      font-size: 22px;
-      cursor: pointer;
-      line-height: 1;
-      z-index: 10;
-      transition: color 0.2s;
-    }
-    #compass-close:hover { color: rgba(176,112,64,.8); }
-
     /* ── FIRE LOGS (home screen) ────────────────────────────────────── */
     #fire-logs {
       position: absolute;
@@ -430,6 +284,11 @@
   <canvas id="disc-canvas" style="position:absolute;inset:0;pointer-events:none;z-index:3;"></canvas>
   <div id="disc-content" style="position:absolute;inset:0;z-index:4;"></div>
   <div id="disc-filter" style="z-index:10;"></div>
+  <div id="disc-my-circles-btn" style="position:absolute;bottom:28px;left:50%;transform:translateX(-50%);
+    padding:10px 28px;border:1px solid rgba(176,112,64,.28);border-radius:24px;
+    color:rgba(176,112,64,.55);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+    cursor:pointer;z-index:10;white-space:nowrap;background:rgba(8,2,1,.7);
+    transition:color .2s,border-color .2s;">My Circles</div>
   <div id="disc-panel" style="z-index:20;"></div>
 </div>
 
@@ -456,19 +315,13 @@
 </div>
 
 <!-- COMMUNITY PAGE -->
-<div id="compass">
-  <canvas id="compass-forest-canvas"></canvas>
-  <div id="compass-outer-tap"></div>
-  <div id="compass-outer-ring"></div>
-  <div id="compass-level">My Communities</div>
-  <div id="compass-close">← Ohana</div>
-  <div id="compass-ring">
-    <div id="compass-orbit"></div>
-    <div id="compass-center">
-      <div id="compass-center-circle">
-        <span id="compass-heart" class="compass-point-icon">♥</span>
-      </div>
-    </div>
+<!-- MEMBER PROFILE SHEET (slides up from Ohana page) -->
+<div id="member-profile-overlay" style="display:none;position:fixed;inset:0;z-index:100;pointer-events:none;">
+  <div id="member-profile-sheet" style="position:absolute;bottom:0;left:0;right:0;
+    background:linear-gradient(180deg,rgba(16,5,2,.98),rgba(8,2,1,1));
+    border-top:1px solid rgba(176,112,64,.2);border-radius:20px 20px 0 0;
+    padding:20px 24px 44px;pointer-events:all;
+    transform:translateY(100%);transition:transform .35s cubic-bezier(.25,.46,.45,.94);">
   </div>
 </div>
 
@@ -716,7 +569,10 @@
       circle.className = 'avatar-circle' + (user.isMe ? ' me' : '');
       circle.style.cssText = `width:${aSize}px;height:${aSize}px;overflow:hidden;display:flex;align-items:center;justify-content:center;cursor:pointer;`;
       circle.innerHTML = makeAvatarSvg(user, aSize);
-      circle.onclick = e => { e.stopPropagation(); openCompass(user); };
+      circle.onclick = e => {
+        e.stopPropagation();
+        if (user.isMe) { transitionToDiscovery(); } else { showMemberProfile(user); }
+      };
 
       const label = document.createElement('div');
       label.className = 'avatar-label';
@@ -1003,9 +859,7 @@
     drawFrame();
   }
 
-  // ── COMPASS ───────────────────────────────────────────────────────────
-  let compassUser = null;
-
+  // ── AVATAR SVG + MEMBER PROFILE ──────────────────────────────────────
   function makeAvatarSvg(user, size) {
     if (user.avatar === 'snoopy') {
       return `<svg width="${size}" height="${size}" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
@@ -1024,173 +878,30 @@
     </svg>`;
   }
 
-  function buildCompass() {
-    const user     = compassUser || USERS[0];
-    const vmin     = Math.min(innerWidth, innerHeight);
-    const ringD    = vmin * 0.72;
-    const ringR    = ringD / 2;
-    const ptSize   = vmin * 0.14;
-    const ctrSize  = vmin * 0.20;
-    const lblSize  = Math.max(9, vmin * 0.024);
-    const cx       = innerWidth / 2, cy = innerHeight / 2;
-    const outerD   = ringD * 1.58;
-
-    // Outer ring
-    document.getElementById('compass-outer-ring').style.width =
-    document.getElementById('compass-outer-ring').style.height = outerD + 'px';
-
-    // Forest ring — same function as Ohana page
-    drawForestOn('compass-forest-canvas', outerD / 2, cx, cy);
-
-    // Outer tap → back to Ohana
-    const outerTap = document.getElementById('compass-outer-tap');
-    const outerR   = outerD / 2;
-    outerTap.onmousemove = e => {
-      const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
-      outerTap.classList.toggle('forest-hover', dist > outerR);
-    };
-    outerTap.onmouseleave = () => outerTap.classList.remove('forest-hover');
-    outerTap.onclick = e => {
-      const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
-      if (dist > outerR) { closeCompass(); transitionToDiscovery(); }
-    };
-
-    const ring = document.getElementById('compass-ring');
-    ring.style.width = ring.style.height = ringD + 'px';
-
-    const orbit = document.getElementById('compass-orbit');
-    orbit.style.width = orbit.style.height = ringD * 0.86 + 'px';
-
-    // Center — heart for self, avatar for others
-    const ctr = document.getElementById('compass-center-circle');
-    ctr.style.width = ctr.style.height = ctrSize + 'px';
-    ctr.style.overflow = 'hidden';
-    if (user.isMe) {
-      ctr.innerHTML = `<span style="font-size:${ctrSize * 0.45}px;color:#e05555;display:inline-block;animation:heartbeat 2.2s ease-in-out infinite;">♥</span>`;
-    } else {
-      ctr.innerHTML = makeAvatarSvg(user, ctrSize);
-    }
-
-    // Name below center
-    let nameEl = document.getElementById('compass-user-name');
-    if (!nameEl) {
-      nameEl = document.createElement('div');
-      nameEl.id = 'compass-user-name';
-      nameEl.style.cssText = 'color:#d8a060;font-size:13px;letter-spacing:.08em;margin-top:8px;text-align:center;pointer-events:none;';
-      document.getElementById('compass-center').appendChild(nameEl);
-    }
-    nameEl.textContent = user.name;
-
-    // Center tap: self → Aloha/Innerwork, others → profile sheet
-    ctr.style.cursor = 'pointer';
-    ctr.onclick = e => {
-      e.stopPropagation();
-      if (user.isMe) {
-        closeCompass();
-        openPage('innerwork');
-      } else {
-        showCompassProfile(user);
-      }
-    };
-
-    // Remove old circle points
-    ring.querySelectorAll('.compass-point').forEach(el => el.remove());
-    const existing = document.getElementById('compass-profile-sheet');
-    if (existing) existing.remove();
-
-    user.circles.forEach((pt, i) => {
-      const angle = -Math.PI / 2 + (2 * Math.PI / user.circles.length) * i;
-      const px    = ringR + Math.cos(angle) * ringR * 0.86;
-      const py    = ringR + Math.sin(angle) * ringR * 0.86;
-
-      const wrap = document.createElement('div');
-      wrap.className = 'compass-point';
-      wrap.style.left = px + 'px';
-      wrap.style.top  = py + 'px';
-
-      const circ = document.createElement('div');
-      circ.className = 'compass-point-circle';
-      circ.style.width = circ.style.height = ptSize + 'px';
-
-      if (pt.create) {
-        circ.style.borderStyle = 'dashed';
-        circ.style.borderColor = 'rgba(176,112,64,.5)';
-        circ.style.background  = 'rgba(40,18,4,.6)';
-      }
-
-      const icon = document.createElement('span');
-      icon.className      = 'compass-point-icon';
-      icon.style.fontSize = (ptSize * 0.38) + 'px';
-      icon.style.color    = pt.create ? 'rgba(200,150,80,.85)' : '';
-      icon.textContent    = pt.icon;
-
-      const lbl = document.createElement('div');
-      lbl.className      = 'compass-point-label';
-      lbl.style.fontSize = lblSize + 'px';
-      lbl.style.color    = pt.create ? 'rgba(176,112,64,.65)' : '';
-      lbl.textContent    = pt.label;
-
-      circ.appendChild(icon);
-      wrap.appendChild(circ);
-      wrap.appendChild(lbl);
-
-      if (!pt.create) {
-        wrap.onclick = e => {
-          e.stopPropagation();
-          closeCompass();
-          // Each community leads to its own Ohana page (home for now)
-        };
-      }
-
-      ring.appendChild(wrap);
-    });
-  }
-
-  function showCompassProfile(user) {
-    let sheet = document.getElementById('compass-profile-sheet');
-    if (!sheet) {
-      sheet = document.createElement('div');
-      sheet.id = 'compass-profile-sheet';
-      sheet.style.cssText = `
-        position:absolute;bottom:0;left:0;right:0;
-        background:linear-gradient(180deg,rgba(16,5,2,.98),rgba(8,2,1,1));
-        border-top:1px solid rgba(176,112,64,.2);
-        border-radius:20px 20px 0 0;
-        padding:20px 24px 44px;
-        z-index:60;
-        transform:translateY(100%);
-        transition:transform .35s cubic-bezier(.25,.46,.45,.94);
-        display:flex;flex-direction:column;align-items:center;text-align:center;
-      `;
-      document.getElementById('compass').appendChild(sheet);
-    }
+  function showMemberProfile(user) {
+    const overlay = document.getElementById('member-profile-overlay');
+    const sheet   = document.getElementById('member-profile-sheet');
     const sz = 56;
     sheet.innerHTML = `
-      <div style="width:36px;height:4px;background:rgba(176,112,64,.22);border-radius:2px;margin-bottom:18px;"></div>
-      <div style="width:${sz}px;height:${sz}px;border-radius:50%;border:1px solid rgba(176,112,64,.3);overflow:hidden;margin-bottom:12px;">${makeAvatarSvg(user, sz)}</div>
-      <div style="color:#d8a060;font-size:18px;letter-spacing:.08em;margin-bottom:4px;">${user.name}</div>
-      <div style="color:rgba(176,112,64,.35);font-size:10px;letter-spacing:.16em;text-transform:uppercase;margin-bottom:18px;">${user.role || 'Circle Member'}</div>
-      <p style="color:#c8904e;font-size:14px;line-height:1.75;font-weight:300;margin-bottom:24px;max-width:280px;">${user.bio || ''}</p>
-      <div style="padding:11px 28px;border:1px solid rgba(176,112,64,.3);border-radius:24px;color:#b07040;font-size:11px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;">Send a Message</div>
+      <div style="width:36px;height:4px;background:rgba(176,112,64,.22);border-radius:2px;margin:0 auto 18px;"></div>
+      <div style="display:flex;flex-direction:column;align-items:center;text-align:center;">
+        <div style="width:${sz}px;height:${sz}px;border-radius:50%;border:1px solid rgba(176,112,64,.3);overflow:hidden;margin-bottom:12px;">${makeAvatarSvg(user, sz)}</div>
+        <div style="color:#d8a060;font-size:18px;letter-spacing:.08em;margin-bottom:4px;">${user.name}</div>
+        <div style="color:rgba(176,112,64,.35);font-size:10px;letter-spacing:.16em;text-transform:uppercase;margin-bottom:18px;">${user.role || 'Circle Member'}</div>
+        <p style="color:#c8904e;font-size:14px;line-height:1.75;font-weight:300;margin-bottom:24px;max-width:280px;">${user.bio || ''}</p>
+        <div style="padding:11px 28px;border:1px solid rgba(176,112,64,.3);border-radius:24px;color:#b07040;font-size:11px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;">Send a Message</div>
+      </div>
     `;
+    sheet.onclick = e => e.stopPropagation();
+    overlay.style.display = 'block';
+    overlay.style.pointerEvents = 'all';
     sheet.getBoundingClientRect();
     sheet.style.transform = 'translateY(0)';
-    sheet.onclick = e => e.stopPropagation();
+    overlay.onclick = () => {
+      sheet.style.transform = 'translateY(100%)';
+      setTimeout(() => { overlay.style.display = 'none'; overlay.style.pointerEvents = 'none'; }, 360);
+    };
   }
-
-  function openCompass(user) {
-    compassUser = user || USERS[0];
-    buildCompass();
-    document.getElementById('compass').classList.add('open');
-  }
-  function closeCompass() {
-    document.getElementById('compass').classList.remove('open');
-    const sheet = document.getElementById('compass-profile-sheet');
-    if (sheet) sheet.remove();
-  }
-
-  document.getElementById('compass-close').addEventListener('click', closeCompass);
-  // Removed: clicking blank space no longer closes the overlay
 
   // ── DISCOVERY ─────────────────────────────────────────────────────────
   let discFilter = 'all';
@@ -1257,6 +968,7 @@
 
     // Filter bar
     const filterBar = document.getElementById('disc-filter');
+    filterBar.style.bottom = '76px'; // sit above My Circles button
     filterBar.innerHTML = '';
     [['all','All'],['land','Land'],['healing','Healing'],['arts','Arts'],['story','Story']].forEach(([val, label]) => {
       const pill = document.createElement('div');
@@ -1265,6 +977,31 @@
       pill.onclick = e => { e.stopPropagation(); discFilter = val; buildDiscovery(); };
       filterBar.appendChild(pill);
     });
+
+    // My Circles button
+    document.getElementById('disc-my-circles-btn').onclick = e => {
+      e.stopPropagation();
+      const me = USERS.find(u => u.isMe);
+      const circles = me ? me.circles.filter(c => !c.create) : [];
+      const panel = document.getElementById('disc-panel');
+      panel.innerHTML = `
+        <div style="width:36px;height:4px;background:rgba(176,112,64,.22);border-radius:2px;margin:0 auto 18px;"></div>
+        <div style="color:#b07040;font-size:12px;letter-spacing:.18em;text-transform:uppercase;text-align:center;margin-bottom:18px;">My Circles</div>
+        ${circles.map(c => `
+          <div style="display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid rgba(176,112,64,.08);cursor:pointer;">
+            <div style="font-size:22px;width:32px;text-align:center;">${c.icon}</div>
+            <div style="color:#d8a060;font-size:15px;flex:1;">${c.label}</div>
+            <div style="color:rgba(176,112,64,.3);font-size:18px;">›</div>
+          </div>`).join('')}
+        <div style="display:flex;align-items:center;gap:14px;padding:12px 0;cursor:pointer;">
+          <div style="width:32px;text-align:center;color:rgba(176,112,64,.4);font-size:18px;">✦</div>
+          <div style="color:rgba(176,112,64,.4);font-size:14px;letter-spacing:.06em;">Create a Circle</div>
+        </div>
+      `;
+      panel.onclick = e => e.stopPropagation();
+      panel.getBoundingClientRect();
+      panel.style.transform = 'translateY(0)';
+    };
 
     // Community fires
     COMMUNITIES.forEach(comm => {
