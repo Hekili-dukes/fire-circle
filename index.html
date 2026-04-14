@@ -614,14 +614,15 @@
   <div id="disc-panel" style="z-index:20;"></div>
 </div>
 
-<!-- INNERWORK / ALOHA PAGE -->
+<!-- INTENTION PAGE -->
 <div id="innerwork" class="screen" style="background:#111;opacity:0;pointer-events:none;transition:opacity .6s ease;display:flex;align-items:center;justify-content:center;z-index:50;">
   <canvas id="iw-forest-canvas" style="position:absolute;inset:0;pointer-events:none;z-index:1;"></canvas>
   <div id="iw-outer-tap" style="position:absolute;inset:0;cursor:default;z-index:2;"></div>
   <div id="iw-outer-ring" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:50%;border:2px solid rgba(80,140,60,.28);box-shadow:0 0 0 1px rgba(80,140,60,.08),inset 0 0 0 1px rgba(80,140,60,.08);pointer-events:none;z-index:2;"></div>
-  <div style="position:absolute;top:18px;left:50%;transform:translateX(-50%);color:rgba(176,112,64,.22);font-size:9px;letter-spacing:.22em;text-transform:uppercase;pointer-events:none;white-space:nowrap;z-index:10;">Aloha</div>
-  <div id="iw-close" style="position:absolute;top:24px;right:28px;color:rgba(176,112,64,.35);font-size:11px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;z-index:10;transition:color .2s;">← Community</div>
+  <div style="position:absolute;top:18px;left:50%;transform:translateX(-50%);color:rgba(176,112,64,.22);font-size:9px;letter-spacing:.22em;text-transform:uppercase;pointer-events:none;white-space:nowrap;z-index:10;">Intention</div>
+  <div id="iw-close" style="position:absolute;top:24px;right:28px;color:rgba(176,112,64,.35);font-size:11px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;z-index:10;transition:color .2s;">← Ohana</div>
   <div id="iw-ring" style="position:relative;border-radius:50%;z-index:3;"></div>
+  <div id="iw-panel" style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(180deg,rgba(16,5,2,.97),rgba(8,2,1,.99));border-top:1px solid rgba(176,112,64,.2);border-radius:20px 20px 0 0;padding:20px 24px 44px;z-index:20;transform:translateY(100%);transition:transform .35s cubic-bezier(.25,.46,.45,.94);max-height:72vh;overflow-y:auto;"></div>
 </div>
 
 <!-- COSMIC PAGE -->
@@ -1799,11 +1800,10 @@
 
   // ── INNERWORK / ALOHA PAGE ────────────────────────────────────────────
   const IW_ITEMS = [
-    { label: 'Journal',      icon: '📖' },
-    { label: 'Meditation',   icon: '🌙' },
-    { label: 'Reflection',   icon: '🌱' },
-    { label: 'Commitments',  icon: '🔥' },
-    { label: 'Patterns',     icon: '✦'  },
+    { label: 'Journal',      icon: '📖', type: 'journal'     },
+    { label: 'Meditation',   icon: '🌙', type: 'meditation'  },
+    { label: 'Commitments',  icon: '🌿', type: 'commitments' },
+    { label: 'Chat',         icon: '🔥', type: 'chat'        },
   ];
 
   function buildInnerwork() {
@@ -1832,8 +1832,14 @@
     };
     outerTap.onmouseleave = () => outerTap.style.cursor = 'default';
     outerTap.onclick = e => {
+      const panel = document.getElementById('iw-panel');
+      const panelOpen = panel.style.transform === 'translateY(0px)' || panel.style.transform === 'translateY(0)';
       const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
-      if (dist > outerR) { closePage('innerwork'); openCompass(USERS[0]); }
+      if (panelOpen) {
+        panel.style.transform = 'translateY(100%)';
+      } else if (dist > outerR) {
+        closePage('innerwork');
+      }
     };
 
     const ring = document.getElementById('iw-ring');
@@ -1905,9 +1911,149 @@
       circ.appendChild(icon);
       wrap.appendChild(circ);
       wrap.appendChild(lbl);
-      wrap.onclick = e => e.stopPropagation(); // placeholder
+      wrap.onclick = e => { e.stopPropagation(); openIntentionPanel(item.type); };
       ring.appendChild(wrap);
     });
+  }
+
+  // ── INTENTION PANELS ─────────────────────────────────────────────────
+  const DAILY_PROMPT = 'What are you bringing to the circle today?';
+
+  const PLEDGES = [
+    { text: 'Tend the lower garden', due: 'Tuesday morning' },
+    { text: 'Bring flowers to evening circle', due: 'Tonight' },
+    { text: 'Check in with Kaimana', due: 'This week' },
+  ];
+
+  function openIntentionPanel(type) {
+    const panel = document.getElementById('iw-panel');
+
+    if (type === 'journal') {
+      panel.innerHTML = `
+        <div style="width:36px;height:4px;background:rgba(176,112,64,.22);border-radius:2px;margin:0 auto 18px;"></div>
+        <div style="color:rgba(176,112,64,.35);font-size:12px;letter-spacing:.12em;text-transform:uppercase;text-align:center;margin-bottom:12px;">Journal</div>
+        <p style="color:#c8904e;font-size:16px;line-height:1.7;text-align:center;font-style:italic;font-weight:300;margin-bottom:20px;">${DAILY_PROMPT}</p>
+        <textarea id="iw-journal-text" style="width:100%;min-height:120px;background:rgba(255,255,255,.03);border:1px solid rgba(176,112,64,.15);border-radius:10px;padding:14px;color:#d8a060;font-size:14px;line-height:1.6;resize:none;outline:none;font-family:inherit;" placeholder="Write here…"></textarea>
+        <div style="text-align:right;margin-top:12px;">
+          <div id="iw-journal-save" style="display:inline-block;padding:9px 22px;border:1px solid rgba(176,112,64,.3);border-radius:20px;color:#b07040;font-size:11px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;">Save</div>
+        </div>
+      `;
+      panel.onclick = e => e.stopPropagation();
+      document.getElementById('iw-journal-save').onclick = () => {
+        panel.style.transform = 'translateY(100%)';
+      };
+
+    } else if (type === 'meditation') {
+      let interval = null;
+      panel.innerHTML = `
+        <div style="width:36px;height:4px;background:rgba(176,112,64,.22);border-radius:2px;margin:0 auto 18px;"></div>
+        <div style="color:rgba(176,112,64,.35);font-size:12px;letter-spacing:.12em;text-transform:uppercase;text-align:center;margin-bottom:24px;">Meditation</div>
+        <div id="iw-med-timer" style="color:#d8a060;font-size:48px;font-weight:200;text-align:center;letter-spacing:.06em;margin-bottom:8px;">5:00</div>
+        <div id="iw-med-cue" style="color:rgba(176,112,64,.35);font-size:13px;text-align:center;letter-spacing:.1em;margin-bottom:28px;">Breathe in… hold… breathe out</div>
+        <div style="display:flex;justify-content:center;gap:12px;margin-bottom:20px;">
+          ${[5,10,20].map(m => `<div class="iw-med-dur" data-min="${m}" style="padding:7px 16px;border:1px solid rgba(176,112,64,.2);border-radius:16px;color:rgba(176,112,64,.5);font-size:11px;letter-spacing:.1em;cursor:pointer;">${m} min</div>`).join('')}
+        </div>
+        <div style="text-align:center;">
+          <div id="iw-med-btn" style="display:inline-block;padding:11px 32px;border:1px solid rgba(176,112,64,.35);border-radius:24px;color:#b07040;font-size:12px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;">Begin</div>
+        </div>
+      `;
+      panel.onclick = e => e.stopPropagation();
+
+      let totalSecs = 5 * 60, remaining = totalSecs, running = false;
+      const cues = ['Breathe in… hold… breathe out', 'Let the mind settle', 'Feel where you are', 'Release what you carry', 'You are here'];
+      let cueIdx = 0;
+
+      panel.querySelectorAll('.iw-med-dur').forEach(btn => {
+        btn.onclick = () => {
+          totalSecs = remaining = parseInt(btn.dataset.min) * 60;
+          const m = Math.floor(remaining/60), s = remaining % 60;
+          document.getElementById('iw-med-timer').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+        };
+      });
+
+      document.getElementById('iw-med-btn').onclick = () => {
+        if (running) {
+          clearInterval(interval); running = false;
+          document.getElementById('iw-med-btn').textContent = 'Resume';
+        } else {
+          running = true;
+          document.getElementById('iw-med-btn').textContent = 'Pause';
+          interval = setInterval(() => {
+            remaining--;
+            const m = Math.floor(remaining/60), s = remaining % 60;
+            document.getElementById('iw-med-timer').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+            if (remaining % 30 === 0) {
+              cueIdx = (cueIdx + 1) % cues.length;
+              document.getElementById('iw-med-cue').textContent = cues[cueIdx];
+            }
+            if (remaining <= 0) { clearInterval(interval); running = false; document.getElementById('iw-med-btn').textContent = 'Done'; }
+          }, 1000);
+        }
+      };
+
+    } else if (type === 'commitments') {
+      panel.innerHTML = `
+        <div style="width:36px;height:4px;background:rgba(176,112,64,.22);border-radius:2px;margin:0 auto 18px;"></div>
+        <div style="color:rgba(176,112,64,.35);font-size:12px;letter-spacing:.12em;text-transform:uppercase;text-align:center;margin-bottom:20px;">Commitments</div>
+        <div style="color:#b07040;font-size:10px;letter-spacing:.18em;text-transform:uppercase;margin-bottom:10px;">Gatherings</div>
+        ${EVENTS.map(ev => `
+          <div style="display:flex;gap:14px;align-items:center;padding:11px 0;border-bottom:1px solid rgba(176,112,64,.08);">
+            <div style="text-align:center;min-width:28px;">
+              <div style="color:#b07040;font-size:18px;font-weight:300;line-height:1;">${ev.day}</div>
+              <div style="color:#4a2808;font-size:9px;text-transform:uppercase;letter-spacing:.06em;">${ev.month}</div>
+            </div>
+            <div style="flex:1;">
+              <div style="color:#d8a060;font-size:14px;">${ev.name}</div>
+              <div style="color:#5a3018;font-size:11px;">${ev.detail}</div>
+            </div>
+            <div style="width:8px;height:8px;border-radius:50%;background:rgba(100,200,100,.6);flex-shrink:0;"></div>
+          </div>`).join('')}
+        <div style="color:#b07040;font-size:10px;letter-spacing:.18em;text-transform:uppercase;margin-top:20px;margin-bottom:10px;">Pledges</div>
+        ${PLEDGES.map(p => `
+          <div style="display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid rgba(176,112,64,.08);">
+            <div style="width:16px;height:16px;border-radius:50%;border:1px solid rgba(176,112,64,.3);flex-shrink:0;margin-top:2px;cursor:pointer;"></div>
+            <div>
+              <div style="color:#d8a060;font-size:14px;margin-bottom:2px;">${p.text}</div>
+              <div style="color:#5a3018;font-size:11px;">${p.due}</div>
+            </div>
+          </div>`).join('')}
+        <div style="display:flex;gap:12px;align-items:center;padding:14px 0;cursor:pointer;">
+          <div style="width:16px;height:16px;border-radius:50%;border:1px dashed rgba(176,112,64,.3);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:rgba(176,112,64,.4);font-size:12px;">+</div>
+          <div style="color:rgba(176,112,64,.4);font-size:13px;letter-spacing:.06em;">Add a pledge</div>
+        </div>
+      `;
+      panel.onclick = e => e.stopPropagation();
+
+    } else if (type === 'chat') {
+      panel.innerHTML = `
+        <div style="width:36px;height:4px;background:rgba(176,112,64,.22);border-radius:2px;margin:0 auto 18px;"></div>
+        <div style="color:rgba(176,112,64,.35);font-size:12px;letter-spacing:.12em;text-transform:uppercase;text-align:center;margin-bottom:14px;">Circle Chat</div>
+        <div id="iw-chat-msgs" style="max-height:38vh;overflow-y:auto;margin-bottom:12px;">
+          ${SEED_CHAT.map(m => `
+            <div style="margin-bottom:10px;${m.sent ? 'text-align:right;' : ''}">
+              ${!m.sent ? `<div style="color:#5a3018;font-size:11px;margin-bottom:3px;padding:0 4px;">${m.name}</div>` : ''}
+              <div style="display:inline-block;padding:9px 13px;font-size:14px;max-width:78%;line-height:1.4;color:#d8a060;background:rgba(176,112,64,${m.sent ? '.2' : '.1'});border-radius:${m.sent ? '16px 4px 16px 16px' : '4px 16px 16px 16px'};">${m.text}</div>
+            </div>`).join('')}
+        </div>
+        <div style="display:flex;gap:10px;border-top:1px solid rgba(176,112,64,.1);padding-top:10px;">
+          <input id="iw-chat-input" type="text" placeholder="Share with the circle…" style="flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(176,112,64,.18);border-radius:20px;padding:10px 14px;color:#d8a060;font-size:14px;outline:none;">
+          <button id="iw-chat-send" style="width:40px;height:40px;flex-shrink:0;border-radius:50%;background:rgba(176,112,64,.18);border:1px solid rgba(176,112,64,.32);color:#b07040;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">→</button>
+        </div>
+      `;
+      panel.onclick = e => e.stopPropagation();
+      const send = () => {
+        const input = document.getElementById('iw-chat-input');
+        const text = input.value.trim(); if (!text) return;
+        const msgs = document.getElementById('iw-chat-msgs');
+        msgs.innerHTML += `<div style="margin-bottom:10px;text-align:right;"><div style="display:inline-block;padding:9px 13px;font-size:14px;max-width:78%;line-height:1.4;color:#d8a060;background:rgba(176,112,64,.2);border-radius:16px 4px 16px 16px;">${text.replace(/</g,'&lt;')}</div></div>`;
+        input.value = ''; msgs.scrollTop = msgs.scrollHeight;
+      };
+      document.getElementById('iw-chat-send').onclick = send;
+      document.getElementById('iw-chat-input').addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+    }
+
+    panel.getBoundingClientRect();
+    panel.style.transform = 'translateY(0)';
   }
 
   // ── COSMIC PAGE ───────────────────────────────────────────────────────
@@ -2127,7 +2273,7 @@
     el.style.pointerEvents = 'none';
   }
 
-  document.getElementById('iw-close').addEventListener('click', () => { closePage('innerwork'); openCompass(USERS[0]); });
+  document.getElementById('iw-close').addEventListener('click', () => { closePage('innerwork'); });
   document.getElementById('cosmic-close').addEventListener('click', () => { closePage('cosmic'); openPage('innerwork'); });
 
   // ── INIT ──────────────────────────────────────────────────────────────
