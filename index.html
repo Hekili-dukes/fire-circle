@@ -298,20 +298,83 @@
   <div id="iw-outer-tap" style="position:absolute;inset:0;cursor:default;z-index:2;"></div>
   <div id="iw-outer-ring" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:50%;border:2px solid rgba(80,140,60,.28);box-shadow:0 0 0 1px rgba(80,140,60,.08),inset 0 0 0 1px rgba(80,140,60,.08);pointer-events:none;z-index:2;"></div>
   <div style="position:absolute;top:18px;left:50%;transform:translateX(-50%);color:rgba(176,112,64,.22);font-size:9px;letter-spacing:.22em;text-transform:uppercase;pointer-events:none;white-space:nowrap;z-index:10;">Intention</div>
-  <div id="iw-close" style="position:absolute;top:24px;right:28px;color:rgba(176,112,64,.35);font-size:11px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;z-index:10;transition:color .2s;">← Ohana</div>
   <div id="iw-ring" style="position:relative;border-radius:50%;z-index:3;"></div>
   <div id="iw-panel" style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(180deg,rgba(16,5,2,.97),rgba(8,2,1,.99));border-top:1px solid rgba(176,112,64,.2);border-radius:20px 20px 0 0;padding:20px 24px 44px;z-index:20;transform:translateY(100%);transition:transform .35s cubic-bezier(.25,.46,.45,.94);max-height:72vh;overflow-y:auto;"></div>
+
+  <!-- MEDITATION IMMERSIVE OVERLAY -->
+  <div id="med-overlay" style="
+    position:absolute;inset:0;
+    background:rgba(1,3,2,0);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    z-index:30;opacity:0;pointer-events:none;
+    transition:opacity .8s ease, background .8s ease;">
+
+    <!-- Duration selector — fades out when running -->
+    <div id="med-dur-row" style="
+      position:absolute;top:60px;left:0;right:0;
+      display:flex;justify-content:center;gap:10px;
+      transition:opacity .6s ease;">
+      <div class="med-dur-pill" data-min="5"  style="padding:6px 18px;border-radius:20px;border:1px solid rgba(196,160,255,.2);color:rgba(196,160,255,.4);font-size:10px;letter-spacing:.14em;cursor:pointer;transition:all .2s;">5 min</div>
+      <div class="med-dur-pill" data-min="10" style="padding:6px 18px;border-radius:20px;border:1px solid rgba(196,160,255,.3);color:rgba(196,160,255,.6);font-size:10px;letter-spacing:.14em;cursor:pointer;transition:all .2s;">10 min</div>
+      <div class="med-dur-pill" data-min="20" style="padding:6px 18px;border-radius:20px;border:1px solid rgba(196,160,255,.2);color:rgba(196,160,255,.4);font-size:10px;letter-spacing:.14em;cursor:pointer;transition:all .2s;">20 min</div>
+    </div>
+
+    <!-- Breathing orb -->
+    <div id="med-orb-wrap" style="position:relative;display:flex;align-items:center;justify-content:center;width:200px;height:200px;">
+      <!-- Outer glow ring — animates with breath -->
+      <div id="med-ring" style="
+        position:absolute;inset:0;border-radius:50%;
+        border:1px solid rgba(196,160,255,.14);
+        box-shadow:0 0 0 0 rgba(196,160,255,.0);
+        transition:transform 1s ease, box-shadow 1s ease;"></div>
+      <!-- Core orb -->
+      <div id="med-orb" style="
+        width:96px;height:96px;border-radius:50%;
+        background:radial-gradient(circle at 38% 36%, rgba(220,200,255,.18) 0%, rgba(196,160,255,.10) 40%, rgba(140,90,255,.06) 100%);
+        border:1px solid rgba(196,160,255,.3);
+        box-shadow:0 0 28px 8px rgba(160,110,255,.22), 0 0 60px 20px rgba(140,90,255,.10);
+        transition:transform 1s ease, box-shadow 1s ease, opacity .6s ease;"></div>
+    </div>
+
+    <!-- Breath cue text -->
+    <div id="med-cue" style="
+      margin-top:32px;
+      color:rgba(196,160,255,.45);font-size:13px;letter-spacing:.18em;
+      text-transform:uppercase;text-align:center;
+      transition:opacity .8s ease;min-height:20px;">tap to begin</div>
+
+    <!-- Timer — whisper at bottom -->
+    <div id="med-timer" style="
+      position:absolute;bottom:72px;left:50%;transform:translateX(-50%);
+      color:rgba(196,160,255,.22);font-size:32px;font-weight:200;
+      letter-spacing:.06em;font-variant-numeric:tabular-nums;
+      transition:opacity .4s ease;">5:00</div>
+
+    <!-- Close hint -->
+    <div id="med-close-hint" style="
+      position:absolute;bottom:32px;left:50%;transform:translateX(-50%);
+      color:rgba(196,160,255,.14);font-size:9px;letter-spacing:.22em;
+      text-transform:uppercase;white-space:nowrap;cursor:pointer;">tap anywhere to close</div>
+  </div>
 </div>
 
-<!-- COMMUNITY PAGE -->
-<!-- MEMBER PROFILE SHEET (slides up from Ohana page) -->
-<div id="member-profile-overlay" style="display:none;position:fixed;inset:0;z-index:100;pointer-events:none;">
-  <div id="member-profile-sheet" style="position:absolute;bottom:0;left:0;right:0;
-    background:linear-gradient(180deg,rgba(16,5,2,.98),rgba(8,2,1,1));
-    border-top:1px solid rgba(176,112,64,.2);border-radius:20px 20px 0 0;
-    padding:20px 24px 44px;pointer-events:all;
-    transform:translateY(100%);transition:transform .35s cubic-bezier(.25,.46,.45,.94);">
-  </div>
+<!-- UNIVERSAL IMMERSIVE PANEL -->
+<div id="immersive-panel" style="
+  position:fixed;inset:0;z-index:500;
+  background:rgba(1,4,2,0);
+  opacity:0;pointer-events:none;
+  transition:opacity .65s ease, background .65s ease;
+  display:flex;flex-direction:column;align-items:stretch;">
+  <div id="imp-content" style="
+    flex:1;overflow-y:auto;
+    padding:56px 28px 96px;
+    max-width:480px;width:100%;
+    margin:0 auto;box-sizing:border-box;"></div>
+  <div id="imp-close-hint" style="
+    position:absolute;bottom:28px;left:50%;transform:translateX(-50%);
+    color:rgba(255,255,255,.1);font-size:9px;letter-spacing:.24em;
+    text-transform:uppercase;white-space:nowrap;cursor:pointer;user-select:none;">
+    tap anywhere to close</div>
 </div>
 
 <script>
@@ -502,9 +565,9 @@
   // ── HOME LAYOUT ───────────────────────────────────────────────────────
   function layout() {
     const vmin     = Math.min(innerWidth, innerHeight);
-    const ringDiam = vmin * 2 / 3;
+    const ringDiam = vmin * 0.78;
     const ringR    = ringDiam / 2;
-    const aSize    = ringDiam / 6;
+    const aSize    = ringDiam / 6 * 0.7;
     const fSize    = Math.max(10, aSize * 0.28);
     const cx = innerWidth / 2, cy = innerHeight / 2;
 
@@ -525,14 +588,10 @@
     };
     outerTap.onmouseleave = () => outerTap.classList.remove('forest-hover');
     outerTap.onclick = e => {
-      const panel = document.getElementById('home-panel');
-      const panelOpen = panel.style.transform === 'translateY(0px)' || panel.style.transform === 'translateY(0)';
+      const ip = document.getElementById('immersive-panel');
+      if (ip && ip.style.pointerEvents === 'all') { closeImmersivePanel(); return; }
       const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
-      if (panelOpen) {
-        panel.style.transform = 'translateY(100%)';
-      } else if (dist > outerR) {
-        transitionToDiscovery();
-      }
+      if (dist > outerR) transitionToDiscovery();
     };
 
     drawForestOn('forest-canvas', outerDiam / 2, cx, cy);
@@ -627,74 +686,70 @@
   }
 
   function openHomePanel(type) {
-    const panel = document.getElementById('home-panel');
-
     if (type === 'events') {
-      panel.innerHTML = `
-        <div style="width:36px;height:4px;background:rgba(176,112,64,.22);border-radius:2px;margin:0 auto 18px;"></div>
-        <div style="color:#b07040;font-size:12px;letter-spacing:.18em;text-transform:uppercase;text-align:center;margin-bottom:18px;">Upcoming Gatherings</div>
+      openImmersivePanel(`
+        <div style="color:rgba(176,112,64,.28);font-size:10px;letter-spacing:.22em;text-transform:uppercase;text-align:center;margin-bottom:32px;">Upcoming Gatherings</div>
         ${EVENTS.map(ev => `
-          <div style="display:flex;gap:14px;align-items:flex-start;padding:13px 0;border-bottom:1px solid rgba(176,112,64,.1);">
-            <div>
-              <div style="color:#b07040;font-size:22px;font-weight:300;line-height:1;">${ev.day}</div>
-              <div style="color:#4a2808;font-size:10px;text-transform:uppercase;letter-spacing:.08em;">${ev.month}</div>
+          <div style="display:flex;gap:18px;align-items:flex-start;padding:16px 0;border-bottom:1px solid rgba(176,112,64,.08);">
+            <div style="min-width:36px;text-align:center;">
+              <div style="color:#b07040;font-size:26px;font-weight:200;line-height:1;">${ev.day}</div>
+              <div style="color:rgba(176,112,64,.3);font-size:9px;text-transform:uppercase;letter-spacing:.1em;">${ev.month}</div>
             </div>
             <div>
-              <div style="color:#d8a060;font-size:15px;margin-bottom:3px;">${ev.name}</div>
-              <div style="color:#5a3018;font-size:12px;">${ev.detail}</div>
+              <div style="color:#d8a060;font-size:16px;margin-bottom:4px;">${ev.name}</div>
+              <div style="color:rgba(176,112,64,.35);font-size:12px;">${ev.detail}</div>
             </div>
           </div>`).join('')}
-      `;
+      `);
+
     } else if (type === 'chat') {
       chatRecentlyActive = true;
-      panel.innerHTML = `
-        <div style="width:36px;height:4px;background:rgba(176,112,64,.22);border-radius:2px;margin:0 auto 18px;"></div>
-        <div style="color:#b07040;font-size:12px;letter-spacing:.18em;text-transform:uppercase;text-align:center;margin-bottom:14px;">Circle Chat</div>
-        <div id="home-chat-msgs" style="max-height:38vh;overflow-y:auto;margin-bottom:12px;">
+      openImmersivePanel(`
+        <div style="color:rgba(176,112,64,.28);font-size:10px;letter-spacing:.22em;text-transform:uppercase;text-align:center;margin-bottom:24px;">Circle Chat</div>
+        <div id="home-chat-msgs" style="margin-bottom:16px;">
           ${SEED_CHAT.map(m => `
             <div style="margin-bottom:10px;${m.sent ? 'text-align:right;' : ''}">
-              ${!m.sent ? `<div style="color:#5a3018;font-size:11px;margin-bottom:3px;padding:0 4px;">${m.name}</div>` : ''}
-              <div style="display:inline-block;padding:9px 13px;font-size:14px;max-width:78%;line-height:1.4;color:#d8a060;background:rgba(176,112,64,${m.sent ? '.2' : '.1'});border-radius:${m.sent ? '16px 4px 16px 16px' : '4px 16px 16px 16px'};">${m.text}</div>
+              ${!m.sent ? `<div style="color:rgba(176,112,64,.3);font-size:11px;margin-bottom:3px;padding:0 4px;">${m.name}</div>` : ''}
+              <div style="display:inline-block;padding:9px 14px;font-size:14px;max-width:82%;line-height:1.45;color:#d8a060;background:rgba(176,112,64,${m.sent ? '.15' : '.07'});border-radius:${m.sent ? '16px 4px 16px 16px' : '4px 16px 16px 16px'};">${m.text}</div>
             </div>`).join('')}
         </div>
-        <div style="display:flex;gap:10px;border-top:1px solid rgba(176,112,64,.1);padding-top:10px;">
-          <input id="home-chat-input" type="text" placeholder="Share with the circle…" style="flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(176,112,64,.18);border-radius:20px;padding:10px 14px;color:#d8a060;font-size:14px;outline:none;">
-          <button id="home-chat-send" style="width:40px;height:40px;flex-shrink:0;border-radius:50%;background:rgba(176,112,64,.18);border:1px solid rgba(176,112,64,.32);color:#b07040;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">→</button>
+        <div style="display:flex;gap:10px;border-top:1px solid rgba(176,112,64,.08);padding-top:14px;">
+          <input id="home-chat-input" type="text" placeholder="Share with the circle…" style="flex:1;background:rgba(255,255,255,.03);border:1px solid rgba(176,112,64,.14);border-radius:20px;padding:10px 14px;color:#d8a060;font-size:14px;outline:none;">
+          <button id="home-chat-send" style="width:40px;height:40px;flex-shrink:0;border-radius:50%;background:rgba(176,112,64,.14);border:1px solid rgba(176,112,64,.28);color:#b07040;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">→</button>
         </div>
-      `;
-      const send = () => {
-        const input = document.getElementById('home-chat-input');
-        const text = input.value.trim(); if (!text) return;
-        const msgs = document.getElementById('home-chat-msgs');
-        msgs.innerHTML += `<div style="margin-bottom:10px;text-align:right;"><div style="display:inline-block;padding:9px 13px;font-size:14px;max-width:78%;line-height:1.4;color:#d8a060;background:rgba(176,112,64,.2);border-radius:16px 4px 16px 16px;">${text.replace(/</g,'&lt;')}</div></div>`;
-        input.value = ''; msgs.scrollTop = msgs.scrollHeight;
-      };
-      document.getElementById('home-chat-send').onclick = send;
-      document.getElementById('home-chat-input').addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
-    } else if (type === 'resources') {
-      panel.innerHTML = `
-        <div style="width:36px;height:4px;background:rgba(176,112,64,.22);border-radius:2px;margin:0 auto 18px;"></div>
-        <div style="color:#b07040;font-size:12px;letter-spacing:.18em;text-transform:uppercase;text-align:center;margin-bottom:4px;">Resources</div>
-        <div style="color:rgba(176,112,64,.35);font-size:10px;letter-spacing:.1em;text-transform:uppercase;text-align:center;margin-bottom:18px;">Hāmākua Circle</div>
-        ${[
-          { title: 'Community Guidelines',   desc: 'How we live and relate to one another'       },
-          { title: 'Land Stewardship Guide',  desc: 'Practices for tending the Sanctuary'         },
-          { title: 'Daily Rhythm',            desc: 'Morning practice, meals, and evening circle' },
-          { title: 'ʻĀina Map',               desc: 'The land, zones, and sacred sites'           },
-        ].map(r => `
-          <div style="display:flex;gap:14px;align-items:center;padding:13px 0;border-bottom:1px solid rgba(176,112,64,.1);cursor:pointer;">
-            <div style="flex:1;">
-              <div style="color:#d8a060;font-size:15px;margin-bottom:3px;">${r.title}</div>
-              <div style="color:#5a3018;font-size:12px;">${r.desc}</div>
-            </div>
-            <div style="color:rgba(176,112,64,.35);font-size:18px;align-self:center;">›</div>
-          </div>`).join('')}
-      `;
-    }
+      `, () => {
+        const send = () => {
+          const input = document.getElementById('home-chat-input');
+          const text = input.value.trim(); if (!text) return;
+          const msgs = document.getElementById('home-chat-msgs');
+          msgs.innerHTML += `<div style="margin-bottom:10px;text-align:right;"><div style="display:inline-block;padding:9px 14px;font-size:14px;max-width:82%;line-height:1.45;color:#d8a060;background:rgba(176,112,64,.15);border-radius:16px 4px 16px 16px;">${text.replace(/</g,'&lt;')}</div></div>`;
+          input.value = ''; msgs.scrollTop = msgs.scrollHeight;
+        };
+        const btn = document.getElementById('home-chat-send');
+        if (btn) btn.onclick = e => { e.stopPropagation(); send(); };
+        const inp = document.getElementById('home-chat-input');
+        if (inp) inp.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+      });
 
-    panel.onclick = e => e.stopPropagation();
-    panel.getBoundingClientRect();
-    panel.style.transform = 'translateY(0)';
+    } else if (type === 'resources') {
+      openImmersivePanel(`
+        <div style="color:rgba(176,112,64,.28);font-size:10px;letter-spacing:.22em;text-transform:uppercase;text-align:center;margin-bottom:6px;">Resources</div>
+        <div style="color:rgba(176,112,64,.18);font-size:9px;letter-spacing:.12em;text-transform:uppercase;text-align:center;margin-bottom:32px;">Hāmākua Circle</div>
+        ${[
+          { title: 'Community Guidelines',  desc: 'How we live and relate to one another'       },
+          { title: 'Land Stewardship Guide', desc: 'Practices for tending the Sanctuary'         },
+          { title: 'Daily Rhythm',           desc: 'Morning practice, meals, and evening circle' },
+          { title: 'ʻĀina Map',              desc: 'The land, zones, and sacred sites'           },
+        ].map(r => `
+          <div style="display:flex;gap:14px;align-items:center;padding:16px 0;border-bottom:1px solid rgba(176,112,64,.07);cursor:pointer;">
+            <div style="flex:1;">
+              <div style="color:#d8a060;font-size:15px;margin-bottom:4px;">${r.title}</div>
+              <div style="color:rgba(176,112,64,.35);font-size:12px;">${r.desc}</div>
+            </div>
+            <div style="color:rgba(176,112,64,.25);font-size:20px;">›</div>
+          </div>`).join('')}
+      `);
+    }
   }
 
 
@@ -868,28 +923,16 @@
   }
 
   function showMemberProfile(user) {
-    const overlay = document.getElementById('member-profile-overlay');
-    const sheet   = document.getElementById('member-profile-sheet');
-    const sz = 56;
-    sheet.innerHTML = `
-      <div style="width:36px;height:4px;background:rgba(176,112,64,.22);border-radius:2px;margin:0 auto 18px;"></div>
-      <div style="display:flex;flex-direction:column;align-items:center;text-align:center;">
-        <div style="width:${sz}px;height:${sz}px;border-radius:50%;border:1px solid rgba(176,112,64,.3);overflow:hidden;margin-bottom:12px;">${makeAvatarSvg(user, sz)}</div>
-        <div style="color:#d8a060;font-size:18px;letter-spacing:.08em;margin-bottom:4px;">${user.name}</div>
-        <div style="color:rgba(176,112,64,.35);font-size:10px;letter-spacing:.16em;text-transform:uppercase;margin-bottom:18px;">${user.role || 'Circle Member'}</div>
-        <p style="color:#c8904e;font-size:14px;line-height:1.75;font-weight:300;margin-bottom:24px;max-width:280px;">${user.bio || ''}</p>
-        <div style="padding:11px 28px;border:1px solid rgba(176,112,64,.3);border-radius:24px;color:#b07040;font-size:11px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;">Send a Message</div>
+    const sz = 64;
+    openImmersivePanel(`
+      <div style="display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:16px;">
+        <div style="width:${sz}px;height:${sz}px;border-radius:50%;border:1px solid rgba(176,112,64,.22);overflow:hidden;margin-bottom:16px;">${makeAvatarSvg(user, sz)}</div>
+        <div style="color:#d8a060;font-size:20px;letter-spacing:.06em;margin-bottom:5px;">${user.name}</div>
+        <div style="color:rgba(176,112,64,.3);font-size:9px;letter-spacing:.2em;text-transform:uppercase;margin-bottom:22px;">${user.role || 'Circle Member'}</div>
+        <p style="color:rgba(200,144,78,.65);font-size:15px;line-height:1.8;font-weight:300;margin-bottom:32px;max-width:300px;">${user.bio || ''}</p>
+        <div id="imp-msg-btn" style="padding:12px 32px;border:1px solid rgba(176,112,64,.22);border-radius:24px;color:rgba(176,112,64,.55);font-size:10px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;">Send a Message</div>
       </div>
-    `;
-    sheet.onclick = e => e.stopPropagation();
-    overlay.style.display = 'block';
-    overlay.style.pointerEvents = 'all';
-    sheet.getBoundingClientRect();
-    sheet.style.transform = 'translateY(0)';
-    overlay.onclick = () => {
-      sheet.style.transform = 'translateY(100%)';
-      setTimeout(() => { overlay.style.display = 'none'; overlay.style.pointerEvents = 'none'; }, 360);
-    };
+    `);
   }
 
   // ── DISCOVERY ─────────────────────────────────────────────────────────
@@ -972,24 +1015,19 @@
       e.stopPropagation();
       const me = USERS.find(u => u.isMe);
       const circles = me ? me.circles.filter(c => !c.create) : [];
-      const panel = document.getElementById('disc-panel');
-      panel.innerHTML = `
-        <div style="width:36px;height:4px;background:rgba(176,112,64,.22);border-radius:2px;margin:0 auto 18px;"></div>
-        <div style="color:#b07040;font-size:12px;letter-spacing:.18em;text-transform:uppercase;text-align:center;margin-bottom:18px;">My Circles</div>
+      openImmersivePanel(`
+        <div style="color:rgba(176,112,64,.28);font-size:10px;letter-spacing:.22em;text-transform:uppercase;text-align:center;margin-bottom:28px;">My Circles</div>
         ${circles.map(c => `
-          <div style="display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid rgba(176,112,64,.08);cursor:pointer;">
+          <div style="display:flex;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid rgba(176,112,64,.07);cursor:pointer;">
             <div style="font-size:22px;width:32px;text-align:center;">${c.icon}</div>
             <div style="color:#d8a060;font-size:15px;flex:1;">${c.label}</div>
-            <div style="color:rgba(176,112,64,.3);font-size:18px;">›</div>
+            <div style="color:rgba(176,112,64,.22);font-size:20px;">›</div>
           </div>`).join('')}
-        <div style="display:flex;align-items:center;gap:14px;padding:12px 0;cursor:pointer;">
-          <div style="width:32px;text-align:center;color:rgba(176,112,64,.4);font-size:18px;">✦</div>
-          <div style="color:rgba(176,112,64,.4);font-size:14px;letter-spacing:.06em;">Create a Circle</div>
+        <div style="display:flex;align-items:center;gap:16px;padding:16px 0;cursor:pointer;opacity:.45;">
+          <div style="width:32px;text-align:center;color:rgba(176,112,64,.5);font-size:18px;">✦</div>
+          <div style="color:rgba(176,112,64,.5);font-size:14px;letter-spacing:.06em;">Create a Circle</div>
         </div>
-      `;
-      panel.onclick = e => e.stopPropagation();
-      panel.getBoundingClientRect();
-      panel.style.transform = 'translateY(0)';
+      `);
     };
 
     // Connect action nodes — ring just inside the forest
@@ -1072,28 +1110,26 @@
   }
 
   function showDiscPanel(comm) {
-    const panel = document.getElementById('disc-panel');
     const typeLabel = { land:'Land & Stewardship', healing:'Healing Arts', arts:'Creative Arts', story:'Story & Memory' }[comm.type] || comm.type;
-    panel.innerHTML = `
-      <div style="width:36px;height:4px;background:rgba(176,112,64,.22);border-radius:2px;margin:0 auto 18px;"></div>
-      <div style="color:#b07040;font-size:12px;letter-spacing:.18em;text-transform:uppercase;text-align:center;margin-bottom:4px;">${comm.name}</div>
-      <div style="color:rgba(176,112,64,.35);font-size:10px;letter-spacing:.1em;text-transform:uppercase;text-align:center;margin-bottom:18px;">${typeLabel}&nbsp;·&nbsp;${comm.members} members</div>
-      <p style="color:#c8904e;font-size:15px;line-height:1.75;text-align:center;font-weight:300;margin-bottom:28px;">${comm.desc}</p>
-      ${comm.isMe
-        ? `<div style="text-align:center;color:rgba(176,112,64,.4);font-size:11px;letter-spacing:.12em;text-transform:uppercase;">Your Circle</div>`
-        : `<div style="text-align:center;"><div id="disc-join-btn" style="display:inline-block;padding:12px 32px;border:1px solid rgba(176,112,64,.35);border-radius:24px;color:#b07040;font-size:12px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;">Request to Join</div></div>`
-      }
-    `;
-    panel.getBoundingClientRect();
-    panel.style.transform = 'translateY(0)';
-    panel.onclick = e => e.stopPropagation();
-    if (!comm.isMe) {
-      document.getElementById('disc-join-btn').onclick = function() {
-        this.textContent = 'Request Sent ✓';
-        this.style.opacity = '.5';
-        this.style.pointerEvents = 'none';
+    openImmersivePanel(`
+      <div style="text-align:center;padding-top:8px;">
+        <div style="color:rgba(176,112,64,.28);font-size:10px;letter-spacing:.22em;text-transform:uppercase;margin-bottom:6px;">${comm.name}</div>
+        <div style="color:rgba(176,112,64,.18);font-size:9px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:28px;">${typeLabel}&nbsp;·&nbsp;${comm.members} members</div>
+        <p style="color:rgba(200,144,78,.65);font-size:16px;line-height:1.8;font-weight:300;margin-bottom:36px;">${comm.desc}</p>
+        ${comm.isMe
+          ? `<div style="color:rgba(176,112,64,.28);font-size:10px;letter-spacing:.18em;text-transform:uppercase;">Your Circle</div>`
+          : `<div id="disc-join-btn" style="display:inline-block;padding:12px 36px;border:1px solid rgba(176,112,64,.22);border-radius:24px;color:rgba(176,112,64,.55);font-size:10px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;">Request to Join</div>`
+        }
+      </div>
+    `, () => {
+      const btn = document.getElementById('disc-join-btn');
+      if (btn) btn.onclick = e => {
+        e.stopPropagation();
+        btn.textContent = 'Request Sent ✓';
+        btn.style.opacity = '.4';
+        btn.style.pointerEvents = 'none';
       };
-    }
+    });
   }
 
   function enterCommunityOhana(comm) {
@@ -1104,7 +1140,6 @@
   function transitionToDiscovery() {
     discFilter = 'all';
     buildDiscovery();
-    document.getElementById('disc-panel').style.transform = 'translateY(100%)';
     document.getElementById('discovery').classList.add('visible');
     document.getElementById('home').classList.add('fade-out');
   }
@@ -1142,36 +1177,36 @@
     };
     outerTap.onmouseleave = () => outerTap.style.cursor = 'default';
     outerTap.onclick = e => {
-      const panel = document.getElementById('iw-panel');
-      const panelOpen = panel.style.transform === 'translateY(0px)' || panel.style.transform === 'translateY(0)';
+      const overlay = document.getElementById('med-overlay');
+      const medOpen = overlay && overlay.style.pointerEvents === 'all';
+      if (medOpen) return;
+      const ip = document.getElementById('immersive-panel');
+      if (ip && ip.style.pointerEvents === 'all') { closeImmersivePanel(); return; }
       const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
-      if (panelOpen) { panel.style.transform = 'translateY(100%)'; }
-      else if (dist > outerR) { closePage('innerwork'); }
+      if (dist > outerR) { closePage('innerwork'); }
     };
 
     const ring = document.getElementById('iw-ring');
     ring.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;z-index:3;';
     ring.innerHTML = '';
 
-    // Layout: 7 chakras in zigzag, heart at center
-    // xMult: 0=crown(center), 1=eye(left), 2=throat(right),
-    //        3=heart(center), 4=solar(left), 5=sacral(right), 6=root(center)
-    const spineH   = vmin * 0.72;
-    const spineTop = cy - spineH / 2;
-    const step     = spineH / 6;
-    const offset   = vmin * 0.22;
-    const nodeD    = vmin * 0.082;
-    const heartD   = vmin * 0.13;
-    const xMult    = [0, -1, 1, 0, -1, 1, 0];
+    const chakraR = vmin * 0.21;  // radius of outer 6 nodes from center
+    const nodeD   = vmin * 0.082;
+    const heartD  = vmin * 0.13;
+    const lblSize = Math.max(9, vmin * 0.023);
 
-    const pts = CHAKRAS.map((ch, i) => ({
-      ch,
-      x: cx + xMult[i] * offset,
-      y: spineTop + i * step,
-      d: ch.id === 'heart' ? heartD : nodeD,
-    }));
+    // Angles: crown=top, then clockwise — eye, throat, root, sacral, solar
+    // crown=top, eye=top-right, throat=top-left, root=bottom, sacral=bottom-left, solar=bottom-right
+    const outerAngles = { crown: -90, eye: -30, throat: 210, root: 90, sacral: 150, solar: 30 };
 
-    // SVG lightning bolt connecting all chakra points
+    const pts = CHAKRAS.map(ch => {
+      if (ch.id === 'heart') return { ch, x: cx, y: cy, d: heartD };
+      const a = outerAngles[ch.id] * Math.PI / 180;
+      return { ch, x: cx + Math.cos(a) * chakraR, y: cy + Math.sin(a) * chakraR, d: nodeD };
+    });
+    const byId = id => pts.find(p => p.ch.id === id);
+
+    // SVG bolt
     const NS  = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(NS, 'svg');
     svg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1;overflow:visible;';
@@ -1180,8 +1215,8 @@
     const grad = document.createElementNS(NS, 'linearGradient');
     grad.setAttribute('id', 'chakra-bolt');
     grad.setAttribute('gradientUnits', 'userSpaceOnUse');
-    grad.setAttribute('x1', cx);  grad.setAttribute('y1', pts[6].y); // root (bottom)
-    grad.setAttribute('x2', cx);  grad.setAttribute('y2', pts[0].y); // crown (top)
+    grad.setAttribute('x1', byId('root').x);  grad.setAttribute('y1', byId('root').y);
+    grad.setAttribute('x2', byId('crown').x); grad.setAttribute('y2', byId('crown').y);
     [
       [0,    '#ff6868', .55],
       [0.17, '#ff9840', .5 ],
@@ -1200,20 +1235,14 @@
     defs.appendChild(grad);
     svg.appendChild(defs);
 
-    const bolt = document.createElementNS(NS, 'polyline');
-    bolt.setAttribute('points', pts.map(p => `${p.x},${p.y}`).join(' '));
-    bolt.setAttribute('stroke', 'url(#chakra-bolt)');
-    bolt.setAttribute('stroke-width', '1.5');
-    bolt.setAttribute('fill', 'none');
-    bolt.setAttribute('stroke-linecap', 'round');
-    bolt.setAttribute('stroke-linejoin', 'round');
-    svg.appendChild(bolt);
     ring.appendChild(svg);
 
-    // Chakra nodes
-    pts.forEach(({ ch, x, y, d }, i) => {
+    // Chakra nodes — heart last so it renders on top at true center
+    const sorted = [...pts].sort((a, b) => (a.ch.id === 'heart') - (b.ch.id === 'heart'));
+    sorted.forEach(({ ch, x, y, d }) => {
       const isHeart = ch.id === 'heart';
-      const onRight = xMult[i] >= 0;
+      const ang     = outerAngles[ch.id] !== undefined ? outerAngles[ch.id] : 0;
+      const cosA    = Math.cos(ang * Math.PI / 180);
 
       const node = document.createElement('div');
       node.style.cssText = `
@@ -1224,26 +1253,27 @@
         border:1px solid ${ch.color}44;
         box-shadow:0 0 ${isHeart ? 26 : 14}px ${isHeart ? 10 : 4}px ${ch.glow};
         display:flex;align-items:center;justify-content:center;
-        cursor:pointer;z-index:2;
-        ${isHeart ? 'animation:heartbeat 3s ease-in-out infinite;' : ''}`;
+        cursor:pointer;z-index:2;`;
 
       const dot = document.createElement('div');
       dot.style.cssText = `
         width:${d * (isHeart ? 0.36 : 0.42)}px;
         height:${d * (isHeart ? 0.36 : 0.42)}px;
         border-radius:50%;background:${ch.color};
-        opacity:${isHeart ? 0.9 : 0.65};pointer-events:none;`;
+        opacity:${isHeart ? 0.9 : 0.65};pointer-events:none;
+        ${isHeart ? 'animation:heartbeat 3s ease-in-out infinite;' : ''}`;
       node.appendChild(dot);
 
       if (ch.label) {
         const lbl = document.createElement('div');
+        const onRight = cosA >= 0;
         lbl.style.cssText = `
           position:absolute;
           ${onRight
             ? `left:calc(50% + ${d * 0.64}px);text-align:left;`
             : `right:calc(50% + ${d * 0.64}px);text-align:right;`}
           top:50%;transform:translateY(-50%);
-          color:${ch.color}80;font-size:${Math.max(9, vmin * 0.023)}px;
+          color:${ch.color}80;font-size:${lblSize}px;
           letter-spacing:.14em;text-transform:uppercase;
           white-space:nowrap;pointer-events:none;`;
         lbl.textContent = ch.label;
@@ -1297,7 +1327,7 @@
         fire.style.boxShadow = '0 0 14px 5px rgba(50,150,50,.18)';
         fire.style.borderColor = 'rgba(80,180,80,.22)';
       });
-      wrap.onclick = e => { e.stopPropagation(); closePage('innerwork'); };
+      wrap.onclick = e => { e.stopPropagation(); closePage('innerwork'); enterCommunityOhana(circ); };
       ring.appendChild(wrap);
     });
   }
@@ -1312,229 +1342,367 @@
   ];
 
   function openIntentionPanel(type) {
-    const panel = document.getElementById('iw-panel');
-
     if (type === 'journal') {
-      panel.innerHTML = `
-        <div style="width:36px;height:4px;background:rgba(176,112,64,.22);border-radius:2px;margin:0 auto 18px;"></div>
-        <div style="color:rgba(176,112,64,.35);font-size:12px;letter-spacing:.12em;text-transform:uppercase;text-align:center;margin-bottom:12px;">Journal</div>
-        <p style="color:#c8904e;font-size:16px;line-height:1.7;text-align:center;font-style:italic;font-weight:300;margin-bottom:20px;">${DAILY_PROMPT}</p>
-        <textarea id="iw-journal-text" style="width:100%;min-height:120px;background:rgba(255,255,255,.03);border:1px solid rgba(176,112,64,.15);border-radius:10px;padding:14px;color:#d8a060;font-size:14px;line-height:1.6;resize:none;outline:none;font-family:inherit;" placeholder="Write here…"></textarea>
-        <div style="text-align:right;margin-top:12px;">
-          <div id="iw-journal-save" style="display:inline-block;padding:9px 22px;border:1px solid rgba(176,112,64,.3);border-radius:20px;color:#b07040;font-size:11px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;">Save</div>
+      openImmersivePanel(`
+        <div style="color:rgba(176,112,64,.28);font-size:10px;letter-spacing:.22em;text-transform:uppercase;text-align:center;margin-bottom:20px;">Journal</div>
+        <p style="color:rgba(196,148,78,.7);font-size:17px;line-height:1.75;text-align:center;font-style:italic;font-weight:300;margin-bottom:28px;">${DAILY_PROMPT}</p>
+        <textarea id="iw-journal-text" style="width:100%;min-height:160px;background:rgba(255,255,255,.02);border:none;border-bottom:1px solid rgba(176,112,64,.14);padding:14px 0;color:#d8a060;font-size:15px;line-height:1.7;resize:none;outline:none;font-family:inherit;box-sizing:border-box;" placeholder="Write here…"></textarea>
+        <div style="text-align:right;margin-top:16px;">
+          <div id="iw-journal-save" style="display:inline-block;padding:9px 24px;border:1px solid rgba(176,112,64,.22);border-radius:20px;color:rgba(176,112,64,.6);font-size:10px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;">Save</div>
         </div>
-      `;
-      panel.onclick = e => e.stopPropagation();
-      document.getElementById('iw-journal-save').onclick = () => {
-        panel.style.transform = 'translateY(100%)';
-      };
-
-    } else if (type === 'meditation') {
-      let interval = null;
-      panel.innerHTML = `
-        <div style="width:36px;height:4px;background:rgba(176,112,64,.22);border-radius:2px;margin:0 auto 18px;"></div>
-        <div style="color:rgba(176,112,64,.35);font-size:12px;letter-spacing:.12em;text-transform:uppercase;text-align:center;margin-bottom:24px;">Meditation</div>
-        <div id="iw-med-timer" style="color:#d8a060;font-size:48px;font-weight:200;text-align:center;letter-spacing:.06em;margin-bottom:8px;">5:00</div>
-        <div id="iw-med-cue" style="color:rgba(176,112,64,.35);font-size:13px;text-align:center;letter-spacing:.1em;margin-bottom:28px;">Breathe in… hold… breathe out</div>
-        <div style="display:flex;justify-content:center;gap:12px;margin-bottom:20px;">
-          ${[5,10,20].map(m => `<div class="iw-med-dur" data-min="${m}" style="padding:7px 16px;border:1px solid rgba(176,112,64,.2);border-radius:16px;color:rgba(176,112,64,.5);font-size:11px;letter-spacing:.1em;cursor:pointer;">${m} min</div>`).join('')}
-        </div>
-        <div style="text-align:center;">
-          <div id="iw-med-btn" style="display:inline-block;padding:11px 32px;border:1px solid rgba(176,112,64,.35);border-radius:24px;color:#b07040;font-size:12px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;">Begin</div>
-        </div>
-      `;
-      panel.onclick = e => e.stopPropagation();
-
-      let totalSecs = 5 * 60, remaining = totalSecs, running = false;
-      const cues = ['Breathe in… hold… breathe out', 'Let the mind settle', 'Feel where you are', 'Release what you carry', 'You are here'];
-      let cueIdx = 0;
-
-      panel.querySelectorAll('.iw-med-dur').forEach(btn => {
-        btn.onclick = () => {
-          totalSecs = remaining = parseInt(btn.dataset.min) * 60;
-          const m = Math.floor(remaining/60), s = remaining % 60;
-          document.getElementById('iw-med-timer').textContent = `${m}:${s.toString().padStart(2,'0')}`;
-        };
+      `, () => {
+        const save = document.getElementById('iw-journal-save');
+        if (save) save.onclick = e => { e.stopPropagation(); closeImmersivePanel(); };
       });
 
-      document.getElementById('iw-med-btn').onclick = () => {
-        if (running) {
-          clearInterval(interval); running = false;
-          document.getElementById('iw-med-btn').textContent = 'Resume';
-        } else {
-          running = true;
-          document.getElementById('iw-med-btn').textContent = 'Pause';
-          interval = setInterval(() => {
-            remaining--;
-            const m = Math.floor(remaining/60), s = remaining % 60;
-            document.getElementById('iw-med-timer').textContent = `${m}:${s.toString().padStart(2,'0')}`;
-            if (remaining % 30 === 0) {
-              cueIdx = (cueIdx + 1) % cues.length;
-              document.getElementById('iw-med-cue').textContent = cues[cueIdx];
-            }
-            if (remaining <= 0) { clearInterval(interval); running = false; document.getElementById('iw-med-btn').textContent = 'Done'; }
-          }, 1000);
-        }
-      };
+    } else if (type === 'meditation') {
+      openMeditationOverlay();
+      return;
 
     } else if (type === 'commitments') {
-      panel.innerHTML = `
-        <div style="width:36px;height:4px;background:rgba(176,112,64,.22);border-radius:2px;margin:0 auto 18px;"></div>
-        <div style="color:rgba(176,112,64,.35);font-size:12px;letter-spacing:.12em;text-transform:uppercase;text-align:center;margin-bottom:20px;">Commitments</div>
-        <div style="color:#b07040;font-size:10px;letter-spacing:.18em;text-transform:uppercase;margin-bottom:10px;">Gatherings</div>
+      openImmersivePanel(`
+        <div style="color:rgba(176,112,64,.28);font-size:10px;letter-spacing:.22em;text-transform:uppercase;text-align:center;margin-bottom:28px;">Commitments</div>
+        <div style="color:rgba(176,112,64,.25);font-size:9px;letter-spacing:.2em;text-transform:uppercase;margin-bottom:12px;">Gatherings</div>
         ${EVENTS.map(ev => `
-          <div style="display:flex;gap:14px;align-items:center;padding:11px 0;border-bottom:1px solid rgba(176,112,64,.08);">
-            <div style="text-align:center;min-width:28px;">
-              <div style="color:#b07040;font-size:18px;font-weight:300;line-height:1;">${ev.day}</div>
-              <div style="color:#4a2808;font-size:9px;text-transform:uppercase;letter-spacing:.06em;">${ev.month}</div>
+          <div style="display:flex;gap:16px;align-items:center;padding:14px 0;border-bottom:1px solid rgba(176,112,64,.07);">
+            <div style="text-align:center;min-width:32px;">
+              <div style="color:#b07040;font-size:20px;font-weight:200;line-height:1;">${ev.day}</div>
+              <div style="color:rgba(176,112,64,.28);font-size:8px;text-transform:uppercase;letter-spacing:.08em;">${ev.month}</div>
             </div>
             <div style="flex:1;">
               <div style="color:#d8a060;font-size:14px;">${ev.name}</div>
-              <div style="color:#5a3018;font-size:11px;">${ev.detail}</div>
+              <div style="color:rgba(176,112,64,.32);font-size:11px;margin-top:2px;">${ev.detail}</div>
             </div>
-            <div style="width:8px;height:8px;border-radius:50%;background:rgba(100,200,100,.6);flex-shrink:0;"></div>
+            <div style="width:7px;height:7px;border-radius:50%;background:rgba(100,200,100,.5);flex-shrink:0;"></div>
           </div>`).join('')}
-        <div style="color:#b07040;font-size:10px;letter-spacing:.18em;text-transform:uppercase;margin-top:20px;margin-bottom:10px;">Pledges</div>
+        <div style="color:rgba(176,112,64,.25);font-size:9px;letter-spacing:.2em;text-transform:uppercase;margin-top:24px;margin-bottom:12px;">Pledges</div>
         ${PLEDGES.map(p => `
-          <div style="display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid rgba(176,112,64,.08);">
-            <div style="width:16px;height:16px;border-radius:50%;border:1px solid rgba(176,112,64,.3);flex-shrink:0;margin-top:2px;cursor:pointer;"></div>
+          <div style="display:flex;gap:14px;align-items:flex-start;padding:12px 0;border-bottom:1px solid rgba(176,112,64,.07);">
+            <div style="width:15px;height:15px;border-radius:50%;border:1px solid rgba(176,112,64,.25);flex-shrink:0;margin-top:3px;cursor:pointer;"></div>
             <div>
               <div style="color:#d8a060;font-size:14px;margin-bottom:2px;">${p.text}</div>
-              <div style="color:#5a3018;font-size:11px;">${p.due}</div>
+              <div style="color:rgba(176,112,64,.32);font-size:11px;">${p.due}</div>
             </div>
           </div>`).join('')}
-        <div style="display:flex;gap:12px;align-items:center;padding:14px 0;cursor:pointer;">
-          <div style="width:16px;height:16px;border-radius:50%;border:1px dashed rgba(176,112,64,.3);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:rgba(176,112,64,.4);font-size:12px;">+</div>
+        <div style="display:flex;gap:12px;align-items:center;padding:16px 0;cursor:pointer;opacity:.5;">
+          <div style="width:15px;height:15px;border-radius:50%;border:1px dashed rgba(176,112,64,.3);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:rgba(176,112,64,.5);font-size:12px;">+</div>
           <div style="color:rgba(176,112,64,.4);font-size:13px;letter-spacing:.06em;">Add a pledge</div>
         </div>
-      `;
-      panel.onclick = e => e.stopPropagation();
+      `);
 
     } else if (type === 'chat') {
-      panel.innerHTML = `
-        <div style="width:36px;height:4px;background:rgba(176,112,64,.22);border-radius:2px;margin:0 auto 18px;"></div>
-        <div style="color:rgba(176,112,64,.35);font-size:12px;letter-spacing:.12em;text-transform:uppercase;text-align:center;margin-bottom:14px;">Circle Chat</div>
-        <div id="iw-chat-msgs" style="max-height:38vh;overflow-y:auto;margin-bottom:12px;">
+      openImmersivePanel(`
+        <div style="color:rgba(176,112,64,.28);font-size:10px;letter-spacing:.22em;text-transform:uppercase;text-align:center;margin-bottom:24px;">Circle Chat</div>
+        <div id="iw-chat-msgs" style="margin-bottom:16px;">
           ${SEED_CHAT.map(m => `
             <div style="margin-bottom:10px;${m.sent ? 'text-align:right;' : ''}">
-              ${!m.sent ? `<div style="color:#5a3018;font-size:11px;margin-bottom:3px;padding:0 4px;">${m.name}</div>` : ''}
-              <div style="display:inline-block;padding:9px 13px;font-size:14px;max-width:78%;line-height:1.4;color:#d8a060;background:rgba(176,112,64,${m.sent ? '.2' : '.1'});border-radius:${m.sent ? '16px 4px 16px 16px' : '4px 16px 16px 16px'};">${m.text}</div>
+              ${!m.sent ? `<div style="color:rgba(176,112,64,.3);font-size:11px;margin-bottom:3px;padding:0 4px;">${m.name}</div>` : ''}
+              <div style="display:inline-block;padding:9px 14px;font-size:14px;max-width:82%;line-height:1.45;color:#d8a060;background:rgba(176,112,64,${m.sent ? '.15' : '.07'});border-radius:${m.sent ? '16px 4px 16px 16px' : '4px 16px 16px 16px'};">${m.text}</div>
             </div>`).join('')}
         </div>
-        <div style="display:flex;gap:10px;border-top:1px solid rgba(176,112,64,.1);padding-top:10px;">
-          <input id="iw-chat-input" type="text" placeholder="Share with the circle…" style="flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(176,112,64,.18);border-radius:20px;padding:10px 14px;color:#d8a060;font-size:14px;outline:none;">
-          <button id="iw-chat-send" style="width:40px;height:40px;flex-shrink:0;border-radius:50%;background:rgba(176,112,64,.18);border:1px solid rgba(176,112,64,.32);color:#b07040;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">→</button>
+        <div style="display:flex;gap:10px;border-top:1px solid rgba(176,112,64,.08);padding-top:14px;">
+          <input id="iw-chat-input" type="text" placeholder="Share with the circle…" style="flex:1;background:rgba(255,255,255,.03);border:1px solid rgba(176,112,64,.14);border-radius:20px;padding:10px 14px;color:#d8a060;font-size:14px;outline:none;">
+          <button id="iw-chat-send" style="width:40px;height:40px;flex-shrink:0;border-radius:50%;background:rgba(176,112,64,.14);border:1px solid rgba(176,112,64,.28);color:#b07040;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">→</button>
         </div>
-      `;
-      panel.onclick = e => e.stopPropagation();
-      const send = () => {
-        const input = document.getElementById('iw-chat-input');
-        const text = input.value.trim(); if (!text) return;
-        const msgs = document.getElementById('iw-chat-msgs');
-        msgs.innerHTML += `<div style="margin-bottom:10px;text-align:right;"><div style="display:inline-block;padding:9px 13px;font-size:14px;max-width:78%;line-height:1.4;color:#d8a060;background:rgba(176,112,64,.2);border-radius:16px 4px 16px 16px;">${text.replace(/</g,'&lt;')}</div></div>`;
-        input.value = ''; msgs.scrollTop = msgs.scrollHeight;
-      };
-      document.getElementById('iw-chat-send').onclick = send;
-      document.getElementById('iw-chat-input').addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+      `, () => {
+        const send = () => {
+          const input = document.getElementById('iw-chat-input');
+          const text = input.value.trim(); if (!text) return;
+          const msgs = document.getElementById('iw-chat-msgs');
+          msgs.innerHTML += `<div style="margin-bottom:10px;text-align:right;"><div style="display:inline-block;padding:9px 14px;font-size:14px;max-width:82%;line-height:1.45;color:#d8a060;background:rgba(176,112,64,.15);border-radius:16px 4px 16px 16px;">${text.replace(/</g,'&lt;')}</div></div>`;
+          input.value = ''; msgs.scrollTop = msgs.scrollHeight;
+        };
+        const btn = document.getElementById('iw-chat-send');
+        if (btn) btn.onclick = e => { e.stopPropagation(); send(); };
+        const inp = document.getElementById('iw-chat-input');
+        if (inp) inp.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+      });
 
     } else if (type === 'create') {
-      panel.innerHTML = `
-        <div style="width:36px;height:4px;background:rgba(255,152,64,.18);border-radius:2px;margin:0 auto 18px;"></div>
-        <div style="color:rgba(255,152,64,.35);font-size:12px;letter-spacing:.12em;text-transform:uppercase;text-align:center;margin-bottom:16px;">Create</div>
-        <p style="color:rgba(255,152,64,.52);font-size:16px;line-height:1.7;text-align:center;font-style:italic;font-weight:300;">What wants to be made through you today?</p>
-      `;
-      panel.onclick = e => e.stopPropagation();
+      openImmersivePanel(`
+        <div style="color:rgba(255,152,64,.28);font-size:10px;letter-spacing:.22em;text-transform:uppercase;text-align:center;margin-bottom:32px;">Create</div>
+        <p style="color:rgba(255,152,64,.55);font-size:20px;line-height:1.8;text-align:center;font-style:italic;font-weight:200;">What wants to be made through you today?</p>
+      `);
 
     } else if (type === 'ground') {
-      panel.innerHTML = `
-        <div style="width:36px;height:4px;background:rgba(255,104,104,.18);border-radius:2px;margin:0 auto 18px;"></div>
-        <div style="color:rgba(255,104,104,.35);font-size:12px;letter-spacing:.12em;text-transform:uppercase;text-align:center;margin-bottom:16px;">Ground</div>
-        <p style="color:rgba(255,104,104,.52);font-size:16px;line-height:1.7;text-align:center;font-style:italic;font-weight:300;">Feel your feet. Feel the earth beneath you. You are here.</p>
-      `;
-      panel.onclick = e => e.stopPropagation();
+      openImmersivePanel(`
+        <div style="color:rgba(255,104,104,.28);font-size:10px;letter-spacing:.22em;text-transform:uppercase;text-align:center;margin-bottom:32px;">Ground</div>
+        <p style="color:rgba(255,104,104,.55);font-size:20px;line-height:1.8;text-align:center;font-style:italic;font-weight:200;">Feel your feet. Feel the earth beneath you. You are here.</p>
+      `);
     }
-
-    panel.getBoundingClientRect();
-    panel.style.transform = 'translateY(0)';
   }
 
-  function openCosmicPanel(type) {
-    const panel = document.getElementById('disc-panel');
-    const me = USERS.find(u => u.isMe);
+  // ── MEDITATION IMMERSIVE OVERLAY ──────────────────────────────────────
+  (function() {
+    // Breath cycle: 4s inhale · 4s hold · 6s exhale  (14s total)
+    const INHALE = 4, HOLD = 4, EXHALE = 6, CYCLE = INHALE + HOLD + EXHALE;
 
+    let medRunning   = false;
+    let medRAF       = null;
+    let medInterval  = null;
+    let medTotalSecs = 10 * 60;
+    let medRemaining = medTotalSecs;
+    let medStartTime = null;   // performance.now() when session started
+
+    function fmtTime(s) {
+      const m = Math.floor(s / 60);
+      return `${m}:${(s % 60).toString().padStart(2,'0')}`;
+    }
+
+    function setCue(text, op) {
+      const el = document.getElementById('med-cue');
+      if (!el) return;
+      el.style.opacity = '0';
+      setTimeout(() => { if (el) { el.textContent = text; el.style.opacity = op || '1'; } }, 400);
+    }
+
+    function animateOrb(ts) {
+      if (!medRunning) return;
+      const elapsed = (ts - medStartTime) / 1000;
+      const phase   = elapsed % CYCLE;
+
+      let scale, glowOp, cueText, orbOp;
+
+      if (phase < INHALE) {
+        // Inhale — orb grows
+        const t = phase / INHALE;
+        scale  = 1 + 0.44 * easeInOut(t);
+        glowOp = 0.22 + 0.28 * t;
+        orbOp  = 0.9 + 0.1 * t;
+        cueText = 'breathe in';
+      } else if (phase < INHALE + HOLD) {
+        // Hold — orb full, steady glow
+        scale  = 1.44;
+        glowOp = 0.5;
+        orbOp  = 1;
+        cueText = 'hold';
+      } else {
+        // Exhale — orb shrinks
+        const t = (phase - INHALE - HOLD) / EXHALE;
+        scale  = 1.44 - 0.44 * easeInOut(t);
+        glowOp = 0.5 - 0.28 * t;
+        orbOp  = 1 - 0.1 * t;
+        cueText = 'breathe out';
+      }
+
+      const orb  = document.getElementById('med-orb');
+      const ring = document.getElementById('med-ring');
+      if (orb) {
+        orb.style.transform   = `scale(${scale.toFixed(3)})`;
+        orb.style.boxShadow   = `0 0 ${(28 + 40 * glowOp).toFixed(0)}px ${(8 + 14 * glowOp).toFixed(0)}px rgba(160,110,255,${glowOp.toFixed(2)}), 0 0 80px 28px rgba(140,90,255,${(glowOp * 0.5).toFixed(2)})`;
+        orb.style.opacity     = orbOp.toFixed(3);
+      }
+      if (ring) {
+        ring.style.transform  = `scale(${(1 + 0.28 * (scale - 1)).toFixed(3)})`;
+        ring.style.boxShadow  = `0 0 0 1px rgba(196,160,255,${(glowOp * 0.5).toFixed(2)})`;
+      }
+
+      // Update cue text on phase boundary (only when it changes)
+      const cueEl = document.getElementById('med-cue');
+      if (cueEl && cueEl._lastCue !== cueText) {
+        cueEl._lastCue = cueText;
+        setCue(cueText);
+      }
+
+      medRAF = requestAnimationFrame(animateOrb);
+    }
+
+    function easeInOut(t) {
+      return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+    }
+
+    function startMed() {
+      if (medRunning) return;
+      medRunning  = true;
+      medStartTime = performance.now();
+
+      // Fade out duration row
+      const row = document.getElementById('med-dur-row');
+      if (row) row.style.opacity = '0';
+
+      // Show timer
+      const timer = document.getElementById('med-timer');
+      if (timer) { timer.textContent = fmtTime(medRemaining); timer.style.opacity = '1'; }
+
+      // Start breath animation
+      medRAF = requestAnimationFrame(animateOrb);
+
+      // Countdown
+      medInterval = setInterval(() => {
+        medRemaining--;
+        const timer = document.getElementById('med-timer');
+        if (timer) timer.textContent = fmtTime(medRemaining);
+        if (medRemaining <= 0) {
+          closeMeditationOverlay();
+        }
+      }, 1000);
+    }
+
+    function closeMeditationOverlay() {
+      medRunning = false;
+      if (medRAF)      { cancelAnimationFrame(medRAF); medRAF = null; }
+      if (medInterval) { clearInterval(medInterval); medInterval = null; }
+
+      const overlay = document.getElementById('med-overlay');
+      if (!overlay) return;
+      overlay.style.opacity = '0';
+      overlay.style.background = 'rgba(1,3,2,0)';
+      setTimeout(() => {
+        overlay.style.pointerEvents = 'none';
+        // Reset orb
+        const orb  = document.getElementById('med-orb');
+        const ring = document.getElementById('med-ring');
+        if (orb)  { orb.style.transform = 'scale(1)'; orb.style.opacity = '1'; }
+        if (ring) { ring.style.transform = 'scale(1)'; }
+        // Reset cue
+        const cue = document.getElementById('med-cue');
+        if (cue)  { cue.textContent = 'tap to begin'; cue._lastCue = ''; cue.style.opacity = '1'; }
+        // Reset timer opacity for next open
+        const timer = document.getElementById('med-timer');
+        if (timer) timer.style.opacity = '0.15';
+        // Reset dur row
+        const row = document.getElementById('med-dur-row');
+        if (row) row.style.opacity = '1';
+      }, 800);
+    }
+
+    window.openMeditationOverlay = function() {
+      // Reset state
+      medRunning   = false;
+      medRemaining = medTotalSecs;
+      if (medRAF)      { cancelAnimationFrame(medRAF); medRAF = null; }
+      if (medInterval) { clearInterval(medInterval); medInterval = null; }
+
+      const overlay = document.getElementById('med-overlay');
+      if (!overlay) return;
+
+      // Reset visuals
+      const orb   = document.getElementById('med-orb');
+      const ring  = document.getElementById('med-ring');
+      const cue   = document.getElementById('med-cue');
+      const timer = document.getElementById('med-timer');
+      const row   = document.getElementById('med-dur-row');
+      if (orb)  { orb.style.transform = 'scale(1)'; orb.style.opacity = '1'; orb.style.transition = 'none'; }
+      if (ring) { ring.style.transform = 'scale(1)'; ring.style.transition = 'none'; }
+      if (cue)  { cue.textContent = 'tap to begin'; cue._lastCue = ''; cue.style.opacity = '1'; }
+      if (timer){ timer.textContent = fmtTime(medTotalSecs); timer.style.opacity = '0.15'; }
+      if (row)  { row.style.opacity = '1'; }
+
+      // Duration pills
+      overlay.querySelectorAll('.med-dur-pill').forEach(pill => {
+        const active = parseInt(pill.dataset.min) === medTotalSecs / 60;
+        pill.style.borderColor = active ? 'rgba(196,160,255,.55)' : 'rgba(196,160,255,.2)';
+        pill.style.color       = active ? 'rgba(196,160,255,.85)' : 'rgba(196,160,255,.4)';
+        pill.onclick = e => {
+          e.stopPropagation();
+          if (medRunning) return;
+          medTotalSecs = medRemaining = parseInt(pill.dataset.min) * 60;
+          if (timer) timer.textContent = fmtTime(medRemaining);
+          overlay.querySelectorAll('.med-dur-pill').forEach(p => {
+            const a = parseInt(p.dataset.min) === medTotalSecs / 60;
+            p.style.borderColor = a ? 'rgba(196,160,255,.55)' : 'rgba(196,160,255,.2)';
+            p.style.color       = a ? 'rgba(196,160,255,.85)' : 'rgba(196,160,255,.4)';
+          });
+        };
+      });
+
+      // Tap orb wrap to begin
+      const orbWrap = document.getElementById('med-orb-wrap');
+      if (orbWrap) {
+        orbWrap.style.cursor = 'pointer';
+        orbWrap.onclick = e => { e.stopPropagation(); startMed(); };
+      }
+
+      // Tap overlay background (not orb or pills) to close when running
+      overlay.onclick = e => {
+        if (e.target === overlay || e.target === document.getElementById('med-close-hint')) {
+          closeMeditationOverlay();
+        }
+      };
+
+      // Restore transitions after a tick
+      setTimeout(() => {
+        if (orb)  orb.style.transition  = 'transform .25s ease, box-shadow .25s ease, opacity .6s ease';
+        if (ring) ring.style.transition = 'transform .25s ease, box-shadow .25s ease';
+      }, 50);
+
+      // Reveal overlay
+      overlay.style.pointerEvents = 'all';
+      overlay.getBoundingClientRect();
+      overlay.style.opacity    = '1';
+      overlay.style.background = 'rgba(1,3,2,0.93)';
+    };
+  })();
+
+  function openCosmicPanel(type) {
     if (type === 'events') {
-      panel.innerHTML = `
-        <div style="width:36px;height:4px;background:rgba(176,112,64,.22);border-radius:2px;margin:0 auto 18px;"></div>
-        <div style="color:#b07040;font-size:12px;letter-spacing:.18em;text-transform:uppercase;text-align:center;margin-bottom:18px;">Nearby Events</div>
+      openImmersivePanel(`
+        <div style="color:rgba(176,112,64,.28);font-size:10px;letter-spacing:.22em;text-transform:uppercase;text-align:center;margin-bottom:28px;">Nearby Events</div>
         ${EVENTS.map(ev => `
-          <div style="display:flex;gap:14px;align-items:flex-start;padding:13px 0;border-bottom:1px solid rgba(176,112,64,.1);">
-            <div>
-              <div style="color:#b07040;font-size:22px;font-weight:300;line-height:1;">${ev.day}</div>
-              <div style="color:#4a2808;font-size:10px;text-transform:uppercase;letter-spacing:.08em;">${ev.month}</div>
+          <div style="display:flex;gap:18px;align-items:flex-start;padding:16px 0;border-bottom:1px solid rgba(176,112,64,.07);">
+            <div style="min-width:36px;text-align:center;">
+              <div style="color:#b07040;font-size:26px;font-weight:200;line-height:1;">${ev.day}</div>
+              <div style="color:rgba(176,112,64,.28);font-size:9px;text-transform:uppercase;letter-spacing:.1em;">${ev.month}</div>
             </div>
             <div>
-              <div style="color:#d8a060;font-size:15px;margin-bottom:3px;">${ev.name}</div>
-              <div style="color:#5a3018;font-size:12px;">${ev.detail}</div>
+              <div style="color:#d8a060;font-size:15px;margin-bottom:4px;">${ev.name}</div>
+              <div style="color:rgba(176,112,64,.32);font-size:12px;">${ev.detail}</div>
             </div>
           </div>`).join('')}
-      `;
+      `);
+
     } else if (type === 'meetup') {
       const others = USERS.filter(u => !u.isMe);
       const suggestion = others[Math.floor(Math.random() * others.length)];
-      const sz = 52;
-      panel.innerHTML = `
-        <div style="width:36px;height:4px;background:rgba(176,112,64,.22);border-radius:2px;margin:0 auto 18px;"></div>
-        <div style="color:#b07040;font-size:12px;letter-spacing:.18em;text-transform:uppercase;text-align:center;margin-bottom:6px;">Someone to Meet</div>
-        <p style="color:rgba(176,112,64,.35);font-size:11px;text-align:center;margin-bottom:20px;letter-spacing:.06em;">You haven't connected with this person in a while</p>
-        <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;">
-          <div style="width:${sz}px;height:${sz}px;border-radius:50%;border:1px solid rgba(176,112,64,.3);overflow:hidden;flex-shrink:0;">${makeAvatarSvg(suggestion, sz)}</div>
+      const sz = 60;
+      openImmersivePanel(`
+        <div style="color:rgba(176,112,64,.28);font-size:10px;letter-spacing:.22em;text-transform:uppercase;text-align:center;margin-bottom:6px;">Someone to Meet</div>
+        <div style="color:rgba(176,112,64,.16);font-size:9px;text-align:center;margin-bottom:28px;letter-spacing:.1em;">You haven't connected in a while</div>
+        <div style="display:flex;align-items:flex-start;gap:18px;margin-bottom:32px;">
+          <div style="width:${sz}px;height:${sz}px;border-radius:50%;border:1px solid rgba(176,112,64,.2);overflow:hidden;flex-shrink:0;">${makeAvatarSvg(suggestion, sz)}</div>
           <div>
-            <div style="color:#d8a060;font-size:17px;margin-bottom:3px;">${suggestion.name}</div>
-            <div style="color:rgba(176,112,64,.4);font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;">${suggestion.role}</div>
-            <div style="color:#c8904e;font-size:13px;line-height:1.6;">${suggestion.bio}</div>
+            <div style="color:#d8a060;font-size:18px;margin-bottom:4px;">${suggestion.name}</div>
+            <div style="color:rgba(176,112,64,.3);font-size:9px;letter-spacing:.16em;text-transform:uppercase;margin-bottom:10px;">${suggestion.role}</div>
+            <div style="color:rgba(200,144,78,.6);font-size:13px;line-height:1.65;">${suggestion.bio}</div>
           </div>
         </div>
         <div style="text-align:center;">
-          <div style="display:inline-block;padding:11px 28px;border:1px solid rgba(176,112,64,.3);border-radius:24px;color:#b07040;font-size:11px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;">Send a Message</div>
+          <div style="display:inline-block;padding:11px 32px;border:1px solid rgba(176,112,64,.22);border-radius:24px;color:rgba(176,112,64,.55);font-size:10px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;">Send a Message</div>
         </div>
-      `;
+      `);
+
     } else if (type === 'gathering') {
-      panel.innerHTML = `
-        <div style="width:36px;height:4px;background:rgba(176,112,64,.22);border-radius:2px;margin:0 auto 18px;"></div>
-        <div style="color:#b07040;font-size:12px;letter-spacing:.18em;text-transform:uppercase;text-align:center;margin-bottom:18px;">Open Gatherings</div>
+      openImmersivePanel(`
+        <div style="color:rgba(176,112,64,.28);font-size:10px;letter-spacing:.22em;text-transform:uppercase;text-align:center;margin-bottom:28px;">Open Gatherings</div>
         ${[
-          { name: 'Morning Circle',      detail: 'Daily · Sunrise · Fire Pit',        open: true  },
-          { name: 'Communal Dinner',     detail: 'Tonight · 6pm · Main Hall',          open: true  },
-          { name: 'Work Party — Garden', detail: 'Saturday · 8am · Lower Field',       open: true  },
-          { name: 'Story Night',         detail: 'Friday · 7pm · 4 spots remaining',   open: false },
+          { name: 'Morning Circle',      detail: 'Daily · Sunrise · Fire Pit',       open: true  },
+          { name: 'Communal Dinner',     detail: 'Tonight · 6pm · Main Hall',         open: true  },
+          { name: 'Work Party — Garden', detail: 'Saturday · 8am · Lower Field',      open: true  },
+          { name: 'Story Night',         detail: 'Friday · 7pm · 4 spots remaining',  open: false },
         ].map(g => `
-          <div style="display:flex;align-items:center;gap:14px;padding:13px 0;border-bottom:1px solid rgba(176,112,64,.1);">
-            <div style="width:8px;height:8px;border-radius:50%;background:${g.open ? 'rgba(100,200,100,.7)' : 'rgba(200,150,60,.5)'};flex-shrink:0;margin-top:2px;"></div>
+          <div style="display:flex;align-items:center;gap:14px;padding:15px 0;border-bottom:1px solid rgba(176,112,64,.07);">
+            <div style="width:7px;height:7px;border-radius:50%;background:${g.open ? 'rgba(100,200,100,.55)' : 'rgba(200,150,60,.4)'};flex-shrink:0;"></div>
             <div style="flex:1;">
               <div style="color:#d8a060;font-size:15px;margin-bottom:3px;">${g.name}</div>
-              <div style="color:#5a3018;font-size:12px;">${g.detail}</div>
+              <div style="color:rgba(176,112,64,.3);font-size:12px;">${g.detail}</div>
             </div>
-            <div style="color:rgba(176,112,64,.35);font-size:18px;">›</div>
+            <div style="color:rgba(176,112,64,.22);font-size:20px;">›</div>
           </div>`).join('')}
-      `;
+      `);
+
     } else if (type === 'ohana') {
       const suggestions = COMMUNITIES.filter(c => !c.isMe).slice(0, 3);
-      panel.innerHTML = `
-        <div style="width:36px;height:4px;background:rgba(176,112,64,.22);border-radius:2px;margin:0 auto 18px;"></div>
-        <div style="color:#b07040;font-size:12px;letter-spacing:.18em;text-transform:uppercase;text-align:center;margin-bottom:6px;">Explore a New Ohana</div>
-        <p style="color:rgba(176,112,64,.35);font-size:11px;text-align:center;margin-bottom:20px;letter-spacing:.06em;">Communities that share your values</p>
+      openImmersivePanel(`
+        <div style="color:rgba(176,112,64,.28);font-size:10px;letter-spacing:.22em;text-transform:uppercase;text-align:center;margin-bottom:6px;">Explore a New Ohana</div>
+        <div style="color:rgba(176,112,64,.16);font-size:9px;text-align:center;margin-bottom:28px;letter-spacing:.1em;">Communities that share your values</div>
         ${suggestions.map(c => `
-          <div style="padding:14px 0;border-bottom:1px solid rgba(176,112,64,.1);">
-            <div style="color:#d8a060;font-size:15px;margin-bottom:4px;">${c.name}</div>
-            <div style="color:#5a3018;font-size:12px;line-height:1.55;margin-bottom:10px;">${c.desc}</div>
-            <div style="color:rgba(176,112,64,.4);font-size:10px;letter-spacing:.1em;text-transform:uppercase;">${c.members} members</div>
+          <div style="padding:18px 0;border-bottom:1px solid rgba(176,112,64,.07);">
+            <div style="color:#d8a060;font-size:15px;margin-bottom:5px;">${c.name}</div>
+            <div style="color:rgba(176,112,64,.38);font-size:12px;line-height:1.6;margin-bottom:8px;">${c.desc}</div>
+            <div style="color:rgba(176,112,64,.22);font-size:9px;letter-spacing:.14em;text-transform:uppercase;">${c.members} members</div>
           </div>`).join('')}
-      `;
+      `);
     }
-
-    panel.onclick = e => e.stopPropagation();
-    panel.getBoundingClientRect();
-    panel.style.transform = 'translateY(0)';
   }
 
   function openPage(id) {
@@ -1550,7 +1718,6 @@
     el.style.pointerEvents = 'none';
   }
 
-  document.getElementById('iw-close').addEventListener('click', () => { closePage('innerwork'); });
 
   // ── INIT ──────────────────────────────────────────────────────────────
   layout();
@@ -1558,16 +1725,52 @@
 
   document.getElementById('disc-close').onclick = transitionFromDiscovery;
 
-  // Tapping discovery background collapses open panel
+  // Tapping discovery background closes immersive panel if open
   document.getElementById('discovery').addEventListener('click', () => {
-    const p = document.getElementById('disc-panel');
-    if (p.style.transform !== 'translateY(100%)') p.style.transform = 'translateY(100%)';
+    const ip = document.getElementById('immersive-panel');
+    if (ip && ip.style.pointerEvents === 'all') closeImmersivePanel();
   });
 
   window.addEventListener('resize', () => {
     layout();
     if (document.getElementById('discovery').classList.contains('visible')) buildDiscovery();
   });
+
+  // ── UNIVERSAL IMMERSIVE PANEL ─────────────────────────────────────────
+  (function() {
+    let _onReady = null;
+
+    window.openImmersivePanel = function(html, onReady) {
+      _onReady = onReady || null;
+      const panel = document.getElementById('immersive-panel');
+      const content = document.getElementById('imp-content');
+      content.innerHTML = html;
+      panel.style.pointerEvents = 'all';
+      panel.getBoundingClientRect();
+      panel.style.opacity = '1';
+      panel.style.background = 'rgba(1,4,2,0.95)';
+      if (_onReady) { setTimeout(_onReady, 20); }
+    };
+
+    window.closeImmersivePanel = function() {
+      const panel = document.getElementById('immersive-panel');
+      panel.style.opacity = '0';
+      panel.style.background = 'rgba(1,4,2,0)';
+      setTimeout(() => {
+        panel.style.pointerEvents = 'none';
+        document.getElementById('imp-content').innerHTML = '';
+      }, 700);
+    };
+
+    // Script is at end of body — DOM already ready
+    const _impPanel = document.getElementById('immersive-panel');
+    _impPanel.addEventListener('click', e => {
+      if (e.target === _impPanel || e.target === document.getElementById('imp-close-hint')) {
+        closeImmersivePanel();
+      }
+    });
+  })();
+
 </script>
 </body>
 </html>
