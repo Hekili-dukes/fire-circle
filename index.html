@@ -365,6 +365,12 @@
   </div>
 </div>
 
+<!-- AUTH OVERLAY — z-index 900, above everything -->
+<div id="auth-overlay" style="position:fixed;inset:0;z-index:900;background:#08060310;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .7s ease;">
+  <canvas id="auth-fire-canvas" style="position:absolute;top:40%;left:50%;transform:translate(-50%,-50%);pointer-events:none;opacity:.45;"></canvas>
+  <div id="auth-content" style="position:relative;z-index:2;width:100%;max-width:380px;padding:0 36px;box-sizing:border-box;"></div>
+</div>
+
 <!-- ARRIVAL SCREEN -->
 <div id="arrival-screen" style="position:fixed;inset:0;z-index:700;background:#080503;opacity:0;pointer-events:none;transition:opacity .9s ease;display:flex;flex-direction:column;align-items:center;justify-content:center;">
   <canvas id="arrival-fire-canvas" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-58%);pointer-events:none;z-index:1;opacity:.55;"></canvas>
@@ -2312,6 +2318,9 @@
         <div style="text-align:center;">
           <div id="root-save-btn" style="display:inline-block;padding:11px 36px;border:1px solid rgba(255,104,104,.2);border-radius:24px;color:rgba(255,104,104,.45);font-size:10px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;transition:all .2s;">Save</div>
         </div>
+        <div style="text-align:center;margin-top:32px;">
+          <div id="root-signout-btn" style="color:rgba(176,112,64,.2);font-size:9px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;">Sign out</div>
+        </div>
       `, () => {
         const saveBtn = document.getElementById('root-save-btn');
         if (!saveBtn) return;
@@ -2338,7 +2347,20 @@
           saveBtn.textContent = 'Saved ✓';
           saveBtn.style.opacity = '.4';
           saveBtn.style.pointerEvents = 'none';
+          // Persist to auth store if logged in
+          const session = authDB.getSession();
+          if (session) {
+            const stored = authDB.getUser(session);
+            if (stored) { stored.name = me.name; stored.role = me.role; stored.bio = me.bio; stored.intention = me.intention; authDB.saveUser(stored); }
+          }
           setTimeout(() => closeImmersivePanel(), 800);
+        };
+
+        const signOutBtn = document.getElementById('root-signout-btn');
+        if (signOutBtn) signOutBtn.onclick = e => {
+          e.stopPropagation();
+          closeImmersivePanel();
+          setTimeout(() => signOut(), 400);
         };
       });
     }
@@ -2631,8 +2653,193 @@
   }
 
 
+  // ── AUTH SYSTEM ───────────────────────────────────────────────────────
+  // localStorage-backed now. To connect Supabase: replace authDB.* methods
+  // with supabase.auth.signUp / signInWithPassword / getSession calls.
+
+  const authDB = {
+    saveUser(profile) {
+      const users = JSON.parse(localStorage.getItem('fc_users') || '{}');
+      users[profile.email] = profile;
+      localStorage.setItem('fc_users', JSON.stringify(users));
+    },
+    getUser(email) {
+      const users = JSON.parse(localStorage.getItem('fc_users') || '{}');
+      return users[email] || null;
+    },
+    setSession(email) { localStorage.setItem('fc_session', email); },
+    getSession()      { return localStorage.getItem('fc_session'); },
+    clearSession()    { localStorage.removeItem('fc_session'); },
+  };
+
+  let authFireRAF = null;
+
+  function showAuthOverlay(tab) {
+    tab = tab || 'signin';
+    const overlay = document.getElementById('auth-overlay');
+    overlay.style.pointerEvents = 'all';
+    overlay.getBoundingClientRect();
+    overlay.style.opacity = '1';
+    overlay.style.background = 'rgba(8,5,3,.97)';
+
+    // Ambient fire
+    const fc = document.getElementById('auth-fire-canvas');
+    const sz = Math.round(Math.min(innerWidth, innerHeight) * 0.46);
+    fc.width = fc.height = sz;
+    fc.style.width = fc.style.height = sz + 'px';
+    if (authFireRAF) cancelAnimationFrame(authFireRAF);
+    runArrivalFire(fc);   // reuse the arrival fire renderer
+
+    renderAuthForm(tab);
+  }
+
+  function hideAuthOverlay() {
+    const overlay = document.getElementById('auth-overlay');
+    overlay.style.opacity = '0';
+    overlay.style.background = 'rgba(8,5,3,0)';
+    setTimeout(() => {
+      overlay.style.pointerEvents = 'none';
+      if (authFireRAF) { cancelAnimationFrame(authFireRAF); authFireRAF = null; }
+    }, 700);
+  }
+
+  function renderAuthForm(tab) {
+    const isSignIn = tab === 'signin';
+    document.getElementById('auth-content').innerHTML = `
+      <div style="text-align:center;margin-bottom:32px;">
+        <div style="color:rgba(176,112,64,.22);font-size:10px;letter-spacing:.28em;text-transform:uppercase;margin-bottom:24px;">Fire Circle</div>
+        <div style="display:flex;justify-content:center;gap:0;border-bottom:1px solid rgba(176,112,64,.1);margin-bottom:28px;">
+          <div id="auth-tab-signin" style="padding:9px 24px;font-size:10px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;border-bottom:1px solid ${isSignIn ? 'rgba(176,112,64,.5)' : 'transparent'};color:${isSignIn ? 'rgba(176,112,64,.65)' : 'rgba(176,112,64,.25)'};transition:all .2s;">Sign In</div>
+          <div id="auth-tab-create" style="padding:9px 24px;font-size:10px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;border-bottom:1px solid ${!isSignIn ? 'rgba(176,112,64,.5)' : 'transparent'};color:${!isSignIn ? 'rgba(176,112,64,.65)' : 'rgba(176,112,64,.25)'};transition:all .2s;">Create Account</div>
+        </div>
+      </div>
+
+      ${isSignIn ? `
+        <div style="margin-bottom:20px;">
+          <div style="color:rgba(176,112,64,.28);font-size:9px;letter-spacing:.18em;text-transform:uppercase;margin-bottom:8px;">Email</div>
+          <input id="auth-email" type="email" placeholder="your@email.com" style="width:100%;background:transparent;border:none;border-bottom:1px solid rgba(176,112,64,.2);padding:8px 0;color:#d8a060;font-size:16px;outline:none;font-family:inherit;box-sizing:border-box;">
+        </div>
+        <div style="margin-bottom:32px;">
+          <div style="color:rgba(176,112,64,.28);font-size:9px;letter-spacing:.18em;text-transform:uppercase;margin-bottom:8px;">Password</div>
+          <input id="auth-pass" type="password" placeholder="••••••••" style="width:100%;background:transparent;border:none;border-bottom:1px solid rgba(176,112,64,.2);padding:8px 0;color:#d8a060;font-size:16px;outline:none;font-family:inherit;box-sizing:border-box;">
+        </div>
+        <div id="auth-error" style="color:rgba(255,100,80,.5);font-size:11px;text-align:center;min-height:16px;margin-bottom:16px;"></div>
+        <div style="text-align:center;">
+          <div id="auth-submit" style="display:inline-block;padding:12px 40px;border:1px solid rgba(176,112,64,.28);border-radius:26px;color:rgba(176,112,64,.6);font-size:10px;letter-spacing:.22em;text-transform:uppercase;cursor:pointer;">Enter the Circle</div>
+        </div>
+      ` : `
+        <div style="margin-bottom:18px;">
+          <div style="color:rgba(176,112,64,.28);font-size:9px;letter-spacing:.18em;text-transform:uppercase;margin-bottom:8px;">Your name</div>
+          <input id="auth-name" type="text" placeholder="What do we call you?" style="width:100%;background:transparent;border:none;border-bottom:1px solid rgba(176,112,64,.2);padding:8px 0;color:#d8a060;font-size:16px;outline:none;font-family:inherit;box-sizing:border-box;">
+        </div>
+        <div style="margin-bottom:18px;">
+          <div style="color:rgba(176,112,64,.28);font-size:9px;letter-spacing:.18em;text-transform:uppercase;margin-bottom:8px;">Email</div>
+          <input id="auth-email" type="email" placeholder="your@email.com" style="width:100%;background:transparent;border:none;border-bottom:1px solid rgba(176,112,64,.2);padding:8px 0;color:#d8a060;font-size:16px;outline:none;font-family:inherit;box-sizing:border-box;">
+        </div>
+        <div style="margin-bottom:18px;">
+          <div style="color:rgba(176,112,64,.28);font-size:9px;letter-spacing:.18em;text-transform:uppercase;margin-bottom:8px;">Password</div>
+          <input id="auth-pass" type="password" placeholder="Choose a password" style="width:100%;background:transparent;border:none;border-bottom:1px solid rgba(176,112,64,.2);padding:8px 0;color:#d8a060;font-size:16px;outline:none;font-family:inherit;box-sizing:border-box;">
+        </div>
+        <div style="margin-bottom:14px;">
+          <div style="color:rgba(176,112,64,.28);font-size:9px;letter-spacing:.18em;text-transform:uppercase;margin-bottom:8px;">Your role <span style="opacity:.5;">(optional)</span></div>
+          <input id="auth-role" type="text" placeholder="Land Steward, Healer, Artist…" style="width:100%;background:transparent;border:none;border-bottom:1px solid rgba(176,112,64,.15);padding:8px 0;color:rgba(200,144,78,.7);font-size:14px;outline:none;font-family:inherit;box-sizing:border-box;">
+        </div>
+        <div style="margin-bottom:28px;">
+          <div style="color:rgba(176,112,64,.28);font-size:9px;letter-spacing:.18em;text-transform:uppercase;margin-bottom:8px;">A little about you <span style="opacity:.5;">(optional)</span></div>
+          <textarea id="auth-bio" placeholder="What you carry and what you're seeking…" style="width:100%;min-height:60px;background:transparent;border:none;border-bottom:1px solid rgba(176,112,64,.12);padding:8px 0;color:rgba(200,144,78,.6);font-size:13px;line-height:1.6;outline:none;font-family:inherit;resize:none;box-sizing:border-box;"></textarea>
+        </div>
+        <div id="auth-error" style="color:rgba(255,100,80,.5);font-size:11px;text-align:center;min-height:16px;margin-bottom:16px;"></div>
+        <div style="text-align:center;">
+          <div id="auth-submit" style="display:inline-block;padding:12px 40px;border:1px solid rgba(176,112,64,.28);border-radius:26px;color:rgba(176,112,64,.6);font-size:10px;letter-spacing:.22em;text-transform:uppercase;cursor:pointer;">Join the Circle</div>
+        </div>
+      `}
+      <div style="text-align:center;margin-top:20px;">
+        <div id="auth-demo" style="color:rgba(176,112,64,.18);font-size:9px;letter-spacing:.16em;text-transform:uppercase;cursor:pointer;">Continue as guest →</div>
+      </div>
+    `;
+
+    // Tab switching
+    document.getElementById('auth-tab-signin').onclick = e => { e.stopPropagation(); renderAuthForm('signin'); };
+    document.getElementById('auth-tab-create').onclick = e => { e.stopPropagation(); renderAuthForm('create'); };
+
+    // Submit
+    document.getElementById('auth-submit').onclick = e => {
+      e.stopPropagation();
+      const email = (document.getElementById('auth-email').value || '').trim().toLowerCase();
+      const pass  = (document.getElementById('auth-pass').value  || '').trim();
+      const err   = document.getElementById('auth-error');
+
+      if (!email || !pass) { err.textContent = 'Email and password are required.'; return; }
+      if (pass.length < 6) { err.textContent = 'Password must be at least 6 characters.'; return; }
+
+      if (isSignIn) {
+        const user = authDB.getUser(email);
+        if (!user || user.password !== btoa(pass)) {
+          err.textContent = 'No account found, or password incorrect.'; return;
+        }
+        authDB.setSession(email);
+        applyUserProfile(user);
+        hideAuthOverlay();
+
+      } else {
+        if (authDB.getUser(email)) { err.textContent = 'An account with that email already exists.'; return; }
+        const name = (document.getElementById('auth-name').value || '').trim();
+        const role = (document.getElementById('auth-role').value || '').trim();
+        const bio  = (document.getElementById('auth-bio').value  || '').trim();
+        if (!name) { err.textContent = 'Please enter your name.'; return; }
+        const profile = { email, password: btoa(pass), name, role, bio, intention: '', avatar: 'initials', createdAt: Date.now() };
+        authDB.saveUser(profile);
+        authDB.setSession(email);
+        applyUserProfile(profile);
+        hideAuthOverlay();
+      }
+    };
+
+    // Guest mode
+    document.getElementById('auth-demo').onclick = e => {
+      e.stopPropagation();
+      hideAuthOverlay();
+    };
+
+    // Enter key submits
+    ['auth-email','auth-pass','auth-name','auth-role'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('keydown', ev => { if (ev.key === 'Enter') document.getElementById('auth-submit').click(); });
+    });
+  }
+
+  function applyUserProfile(profile) {
+    // Merge real account into the live USERS array as "me"
+    const me = USERS.find(u => u.isMe);
+    if (!me) return;
+    me.name      = profile.name      || me.name;
+    me.role      = profile.role      || me.role;
+    me.bio       = profile.bio       || me.bio;
+    me.intention = profile.intention || me.intention;
+    me.email     = profile.email;
+    // Re-render home so avatar label updates
+    layout();
+  }
+
+  function initAuth() {
+    const session = authDB.getSession();
+    if (session) {
+      const profile = authDB.getUser(session);
+      if (profile) { applyUserProfile(profile); return; } // already logged in
+    }
+    // No session — show auth after a brief moment so the fire renders first
+    setTimeout(() => showAuthOverlay('signin'), 600);
+  }
+
+  // Sign-out — callable from Root profile panel
+  window.signOut = function() {
+    authDB.clearSession();
+    showAuthOverlay('signin');
+  };
+
   // ── INIT ──────────────────────────────────────────────────────────────
   layout();
+  initAuth();
   // Discovery navigation is handled by #outer-tap click in layout()
 
   document.getElementById('disc-close').onclick = transitionFromDiscovery;
