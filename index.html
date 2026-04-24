@@ -100,6 +100,12 @@
       transform: translate(-50%, -50%);
       pointer-events: none;
       z-index: 6;
+      opacity: 0;
+      transition: opacity .45s ease;
+    }
+    #fire-logs.logs-visible {
+      opacity: 1;
+      pointer-events: all;
     }
     .fire-log {
       position: absolute;
@@ -619,6 +625,7 @@
     outerTap.onclick = e => {
       const ip = document.getElementById('immersive-panel');
       if (ip && ip.style.pointerEvents === 'all') { closeImmersivePanel(); return; }
+      if (fireLogsOpen) { fireLogsOpen = false; document.getElementById('fire-logs').classList.remove('logs-visible'); return; }
       const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
       if (dist > outerR) transitionToDiscovery();
     };
@@ -628,7 +635,7 @@
     const center = document.getElementById('center');
     const cs = aSize * 2.4;
     center.style.width = center.style.height = cs + 'px';
-    center.onclick = e => { e.stopPropagation(); }; // fire is ambient — logs are the nav
+    center.onclick = e => { e.stopPropagation(); toggleFireLogs(); };
     initFireCanvas(Math.round(cs));
     buildFireLogs(cx, cy, cs);
 
@@ -674,6 +681,12 @@
   }
 
   let chatRecentlyActive = false;
+  let fireLogsOpen = false;
+
+  function toggleFireLogs() {
+    fireLogsOpen = !fireLogsOpen;
+    document.getElementById('fire-logs').classList.toggle('logs-visible', fireLogsOpen);
+  }
 
   function buildFireLogs(cx, cy, fireSize) {
     const container = document.getElementById('fire-logs');
