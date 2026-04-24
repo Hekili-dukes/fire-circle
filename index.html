@@ -500,7 +500,18 @@
   // ── SESSION STATE ─────────────────────────────────────────────────────
   const RSVP_STATES    = {};   // eventName → 'going'|'maybe'|'no'
   const PLEDGE_STATES  = {};   // pledgeIdx → true|false
-  const CREATE_LOG     = [];   // { text, ts } created entries
+  const CREATE_LOG     = [];   // { text, ts } my entries (kept for compatibility)
+
+  // Creative projects — each has a lifecycle stage
+  // stages: 'seeding' | 'growing' | 'ripening' | 'offered'
+  const MY_CREATIONS = [];   // { title, desc, stage, ts }
+  const CIRCLE_CREATIONS = [
+    { name: 'Hina',    title: 'Ceremony altar piece',       desc: 'Woven from bougainvillea, ti leaf, and black lava stone for the next gathering.',         stage: 'ripening', ts: Date.now() - 86400000 * 1 },
+    { name: 'Makoa',   title: 'Elder moʻolelo recordings',  desc: 'Capturing the stories of the upper valley before they are forgotten.',                     stage: 'growing',  ts: Date.now() - 86400000 * 2 },
+    { name: 'Leilani', title: 'Sleep + nervous system tonic',desc: 'Herbal formula with local noni and ashwagandha — almost ready to share.',                 stage: 'ripening', ts: Date.now() - 86400000 * 3 },
+    { name: 'Noa',     title: 'Sanctuary seed library',     desc: '40 varieties catalogued so far. A living archive for the land.',                           stage: 'growing',  ts: Date.now() - 86400000 * 4 },
+    { name: 'Kaimana', title: 'Lower field water catchment', desc: 'First prototype built. Testing this week.',                                               stage: 'offered',  ts: Date.now() - 86400000 * 5 },
+  ];
 
   // node: matches fire log type or chakra type where the glow should appear
   const NOTIFICATIONS = [
@@ -2160,38 +2171,112 @@
       });
 
     } else if (type === 'create') {
-      const CREATE_PROMPTS = [
-        'What wants to be made through you today?',
-        'What are you in the middle of creating?',
-        'What idea keeps returning to you?',
-        'What would you make if fear stepped aside?',
-        'What are your hands drawn to right now?',
+      const me = USERS.find(u => u.isMe);
+      const STAGES = [
+        { key: 'seeding',  label: 'Seeding',  color: 'rgba(255,152,64,.35)', desc: 'An idea taking root'       },
+        { key: 'growing',  label: 'Growing',  color: 'rgba(255,152,64,.55)', desc: 'Taking shape in the world' },
+        { key: 'ripening', label: 'Ripening', color: 'rgba(255,152,64,.78)', desc: 'Nearly ready to offer'     },
+        { key: 'offered',  label: 'Offered',  color: 'rgba(255,200,100,.9)', desc: 'Given to the circle'       },
       ];
-      const todayPrompt = CREATE_PROMPTS[new Date().getDate() % CREATE_PROMPTS.length];
+      const stageOf = key => STAGES.find(s => s.key === key) || STAGES[0];
+      const allCircle = [...MY_CREATIONS.map(c => ({ ...c, name: me.name, isMe: true })), ...CIRCLE_CREATIONS]
+        .sort((a, b) => b.ts - a.ts);
+
       openImmersivePanel(`
-        <div style="color:rgba(255,152,64,.28);font-size:10px;letter-spacing:.22em;text-transform:uppercase;text-align:center;margin-bottom:32px;">Create</div>
-        <p style="color:rgba(255,152,64,.55);font-size:19px;line-height:1.8;text-align:center;font-style:italic;font-weight:200;margin-bottom:32px;">${todayPrompt}</p>
-        <textarea id="create-text" placeholder="Name what you're making…" style="width:100%;min-height:120px;background:rgba(255,255,255,.02);border:none;border-bottom:1px solid rgba(255,152,64,.14);padding:12px 0;color:#d8a060;font-size:15px;line-height:1.7;resize:none;outline:none;font-family:inherit;box-sizing:border-box;"></textarea>
-        <div style="text-align:right;margin-top:16px;">
-          <div id="create-log-btn" style="display:inline-block;padding:9px 24px;border:1px solid rgba(255,152,64,.22);border-radius:20px;color:rgba(255,152,64,.6);font-size:10px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;">Log it</div>
+        <div style="color:rgba(255,152,64,.28);font-size:10px;letter-spacing:.22em;text-transform:uppercase;text-align:center;margin-bottom:28px;">Create</div>
+
+        <!-- Add a creation -->
+        ${MY_CREATIONS.length === 0 ? `
+          <p style="color:rgba(255,152,64,.42);font-size:16px;line-height:1.8;text-align:center;font-style:italic;font-weight:200;margin-bottom:28px;">What are you bringing<br>into being?</p>` : ''}
+
+        <div id="create-form">
+          <input id="create-title" type="text" placeholder="Name your creation…" style="width:100%;background:transparent;border:none;border-bottom:1px solid rgba(255,152,64,.2);padding:8px 0;color:#d8a060;font-size:18px;font-weight:200;outline:none;font-family:inherit;box-sizing:border-box;margin-bottom:18px;">
+          <textarea id="create-desc" placeholder="Describe it briefly — what it is, who it's for…" style="width:100%;min-height:80px;background:transparent;border:none;border-bottom:1px solid rgba(255,152,64,.12);padding:8px 0;color:#d8a060;font-size:14px;line-height:1.65;resize:none;outline:none;font-family:inherit;box-sizing:border-box;margin-bottom:20px;"></textarea>
+
+          <div style="color:rgba(255,152,64,.25);font-size:9px;letter-spacing:.2em;text-transform:uppercase;margin-bottom:12px;">Where is it?</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px;">
+            ${STAGES.map(s => `<div class="stage-pill" data-key="${s.key}" style="padding:6px 14px;border-radius:16px;font-size:10px;letter-spacing:.12em;cursor:pointer;transition:all .2s;border:1px solid rgba(255,152,64,.18);color:rgba(255,152,64,.38);">${s.label}</div>`).join('')}
+          </div>
+
+          <div style="text-align:center;">
+            <div id="create-add-btn" style="display:inline-block;padding:10px 32px;border:1px solid rgba(255,152,64,.22);border-radius:22px;color:rgba(255,152,64,.55);font-size:10px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;">Add to Circle</div>
+          </div>
         </div>
-        ${CREATE_LOG.length > 0 ? `
-          <div style="margin-top:36px;">
-            <div style="color:rgba(255,152,64,.22);font-size:9px;letter-spacing:.2em;text-transform:uppercase;margin-bottom:14px;">Recent creations</div>
-            ${CREATE_LOG.slice(0,5).map(entry => `
-              <div style="padding:10px 0;border-bottom:1px solid rgba(255,152,64,.06);">
-                <div style="color:rgba(255,152,64,.22);font-size:9px;letter-spacing:.1em;margin-bottom:4px;">${new Date(entry.ts).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>
-                <div style="color:rgba(200,144,78,.55);font-size:13px;line-height:1.6;">${entry.text.replace(/</g,'&lt;')}</div>
-              </div>`).join('')}
+
+        <!-- My active creations -->
+        ${MY_CREATIONS.length > 0 ? `
+          <div style="margin-top:32px;">
+            <div style="height:1px;background:rgba(255,152,64,.07);margin-bottom:22px;"></div>
+            <div style="color:rgba(255,152,64,.2);font-size:9px;letter-spacing:.2em;text-transform:uppercase;margin-bottom:16px;">My offerings</div>
+            ${MY_CREATIONS.map((c, i) => {
+              const st = stageOf(c.stage);
+              return `<div style="display:flex;gap:14px;align-items:flex-start;padding:12px 0;border-bottom:1px solid rgba(255,152,64,.06);">
+                <div style="flex:1;">
+                  <div style="color:#d8a060;font-size:14px;margin-bottom:3px;">${c.title.replace(/</g,'&lt;')}</div>
+                  <div style="color:rgba(200,144,78,.45);font-size:12px;line-height:1.5;margin-bottom:6px;">${c.desc.replace(/</g,'&lt;')}</div>
+                  <div style="display:flex;gap:6px;">
+                    ${STAGES.map(s => `<div class="stage-advance" data-cidx="${i}" data-skey="${s.key}" style="padding:3px 9px;border-radius:10px;font-size:9px;letter-spacing:.1em;cursor:pointer;transition:all .2s;border:1px solid ${c.stage===s.key ? st.color : 'rgba(255,152,64,.14)'};color:${c.stage===s.key ? st.color : 'rgba(255,152,64,.28)'};">${s.label}</div>`).join('')}
+                  </div>
+                </div>
+              </div>`;
+            }).join('')}
           </div>` : ''}
+
+        <!-- Circle offerings -->
+        <div style="margin-top:32px;">
+          <div style="height:1px;background:rgba(255,152,64,.07);margin-bottom:22px;"></div>
+          <div style="color:rgba(255,152,64,.2);font-size:9px;letter-spacing:.2em;text-transform:uppercase;margin-bottom:18px;">What the circle is bringing forth</div>
+          ${allCircle.slice(0,7).map(c => {
+            const st = stageOf(c.stage);
+            return `<div style="padding:14px 0;border-bottom:1px solid rgba(255,152,64,.05);">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+                <div style="color:rgba(255,152,64,.45);font-size:11px;">${c.name}</div>
+                <div style="padding:2px 8px;border-radius:8px;font-size:8px;letter-spacing:.1em;border:1px solid ${st.color};color:${st.color};">${st.label}</div>
+              </div>
+              <div style="color:#d8a060;font-size:14px;margin-bottom:3px;">${c.title.replace(/</g,'&lt;')}</div>
+              <div style="color:rgba(200,144,78,.45);font-size:12px;line-height:1.6;">${c.desc.replace(/</g,'&lt;')}</div>
+            </div>`;
+          }).join('')}
+        </div>
       `, () => {
-        const btn = document.getElementById('create-log-btn');
-        if (btn) btn.onclick = e => {
+        // Stage pill selection
+        let selectedStage = 'seeding';
+        document.querySelectorAll('.stage-pill').forEach(pill => {
+          pill.onclick = e => {
+            e.stopPropagation();
+            selectedStage = pill.dataset.key;
+            document.querySelectorAll('.stage-pill').forEach(p => {
+              const active = p.dataset.key === selectedStage;
+              p.style.borderColor = active ? 'rgba(255,152,64,.6)' : 'rgba(255,152,64,.18)';
+              p.style.color       = active ? 'rgba(255,152,64,.85)' : 'rgba(255,152,64,.38)';
+            });
+          };
+        });
+
+        // Add creation
+        const addBtn = document.getElementById('create-add-btn');
+        if (addBtn) addBtn.onclick = e => {
           e.stopPropagation();
-          const text = (document.getElementById('create-text').value || '').trim();
-          if (text) { CREATE_LOG.unshift({ text, ts: Date.now() }); }
+          const title = (document.getElementById('create-title').value || '').trim();
+          const desc  = (document.getElementById('create-desc').value  || '').trim();
+          if (!title) { document.getElementById('create-title').style.borderBottomColor = 'rgba(255,100,80,.4)'; return; }
+          MY_CREATIONS.unshift({ title, desc: desc || '—', stage: selectedStage, ts: Date.now() });
+          CIRCLE_CREATIONS.unshift({ name: me.name, title, desc: desc || '—', stage: selectedStage, ts: Date.now(), isMe: true });
           openIntentionPanel('create');
         };
+
+        // Advance stage on my creations
+        document.querySelectorAll('.stage-advance').forEach(btn => {
+          btn.onclick = e => {
+            e.stopPropagation();
+            const idx = parseInt(btn.dataset.cidx);
+            MY_CREATIONS[idx].stage = btn.dataset.skey;
+            // Sync to circle view
+            const cc = CIRCLE_CREATIONS.find(c => c.isMe && c.title === MY_CREATIONS[idx].title);
+            if (cc) cc.stage = btn.dataset.skey;
+            openIntentionPanel('create');
+          };
+        });
       });
 
     } else if (type === 'root') {
