@@ -1798,7 +1798,7 @@
   const CHAKRAS = [
     { id: 'crown',  label: 'Meditation',  color: '#c4a0ff', glow: 'rgba(160,120,255,.4)', type: 'meditation'  },
     { id: 'eye',    label: 'Journal',     color: '#8080ff', glow: 'rgba(80,80,255,.4)',   type: 'journal'     },
-    { id: 'throat', label: 'Chat',        color: '#50b8ff', glow: 'rgba(40,140,255,.4)',  type: 'chat'        },
+    { id: 'throat', label: 'Gratitude',   color: '#50b8ff', glow: 'rgba(40,140,255,.4)',  type: 'gratitude'   },
     { id: 'heart',  label: '',            color: '#60e060', glow: 'rgba(40,190,40,.5)',   type: 'global'      },
     { id: 'solar',  label: 'Commitments', color: '#f0d040', glow: 'rgba(210,170,20,.4)', type: 'commitments' },
     { id: 'sacral', label: 'Create',      color: '#ff9840', glow: 'rgba(230,120,20,.4)', type: 'create'      },
@@ -2124,32 +2124,39 @@
         };
       });
 
-    } else if (type === 'chat') {
+    } else if (type === 'gratitude') {
+      const GRATITUDE_LOG = window._gratitudeLog = window._gratitudeLog || [];
+      const GRATITUDE_PROMPTS = [
+        'What are you grateful for in this circle today?',
+        'Who in the community has touched you recently?',
+        'What does this land give you that you couldn\'t find alone?',
+        'What moment from this week do you want to hold?',
+        'What are you receiving right now, even quietly?',
+      ];
+      const prompt = GRATITUDE_PROMPTS[new Date().getDate() % GRATITUDE_PROMPTS.length];
       openImmersivePanel(`
-        <div style="color:rgba(176,112,64,.28);font-size:10px;letter-spacing:.22em;text-transform:uppercase;text-align:center;margin-bottom:24px;">Circle Chat</div>
-        <div id="iw-chat-msgs" style="margin-bottom:16px;">
-          ${SEED_CHAT.map(m => `
-            <div style="margin-bottom:10px;${m.sent ? 'text-align:right;' : ''}">
-              ${!m.sent ? `<div style="color:rgba(176,112,64,.3);font-size:11px;margin-bottom:3px;padding:0 4px;">${m.name}</div>` : ''}
-              <div style="display:inline-block;padding:9px 14px;font-size:14px;max-width:82%;line-height:1.45;color:#d8a060;background:rgba(176,112,64,${m.sent ? '.15' : '.07'});border-radius:${m.sent ? '16px 4px 16px 16px' : '4px 16px 16px 16px'};">${m.text}</div>
+        <div style="color:rgba(80,184,255,.22);font-size:9px;letter-spacing:.26em;text-transform:uppercase;text-align:center;margin-bottom:32px;">Gratitude</div>
+        <p style="color:rgba(80,184,255,.5);font-size:18px;line-height:1.8;text-align:center;font-style:italic;font-weight:200;margin-bottom:32px;">${prompt}</p>
+        <textarea id="grat-text" placeholder="What you're grateful for…" style="width:100%;min-height:130px;background:rgba(255,255,255,.02);border:none;border-bottom:1px solid rgba(80,184,255,.14);padding:12px 0;color:#d8a060;font-size:15px;line-height:1.7;resize:none;outline:none;font-family:inherit;box-sizing:border-box;"></textarea>
+        <div style="text-align:right;margin-top:16px;margin-bottom:36px;">
+          <div id="grat-save" style="display:inline-block;padding:9px 24px;border:1px solid rgba(80,184,255,.22);border-radius:20px;color:rgba(80,184,255,.5);font-size:10px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;">Offer</div>
+        </div>
+        ${GRATITUDE_LOG.length > 0 ? `
+          <div style="color:rgba(80,184,255,.18);font-size:9px;letter-spacing:.18em;text-transform:uppercase;margin-bottom:16px;">Offered gratitudes</div>
+          ${GRATITUDE_LOG.slice(0,5).map(e => `
+            <div style="padding:12px 0;border-bottom:1px solid rgba(80,184,255,.06);">
+              <div style="color:rgba(80,184,255,.2);font-size:9px;letter-spacing:.1em;margin-bottom:5px;">${new Date(e.ts).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>
+              <p style="color:rgba(200,144,78,.5);font-size:13px;line-height:1.7;font-style:italic;margin:0;">"${e.text.replace(/</g,'&lt;')}"</p>
             </div>`).join('')}
-        </div>
-        <div style="display:flex;gap:10px;border-top:1px solid rgba(176,112,64,.08);padding-top:14px;">
-          <input id="iw-chat-input" type="text" placeholder="Share with the circle…" style="flex:1;background:rgba(255,255,255,.03);border:1px solid rgba(176,112,64,.14);border-radius:20px;padding:10px 14px;color:#d8a060;font-size:14px;outline:none;">
-          <button id="iw-chat-send" style="width:40px;height:40px;flex-shrink:0;border-radius:50%;background:rgba(176,112,64,.14);border:1px solid rgba(176,112,64,.28);color:#b07040;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">→</button>
-        </div>
+        ` : ''}
       `, () => {
-        const send = () => {
-          const input = document.getElementById('iw-chat-input');
-          const text = input.value.trim(); if (!text) return;
-          const msgs = document.getElementById('iw-chat-msgs');
-          msgs.innerHTML += `<div style="margin-bottom:10px;text-align:right;"><div style="display:inline-block;padding:9px 14px;font-size:14px;max-width:82%;line-height:1.45;color:#d8a060;background:rgba(176,112,64,.15);border-radius:16px 4px 16px 16px;">${text.replace(/</g,'&lt;')}</div></div>`;
-          input.value = ''; msgs.scrollTop = msgs.scrollHeight;
+        const save = document.getElementById('grat-save');
+        if (save) save.onclick = e => {
+          e.stopPropagation();
+          const text = (document.getElementById('grat-text').value || '').trim();
+          if (text) GRATITUDE_LOG.unshift({ text, ts: Date.now() });
+          openIntentionPanel('gratitude');
         };
-        const btn = document.getElementById('iw-chat-send');
-        if (btn) btn.onclick = e => { e.stopPropagation(); send(); };
-        const inp = document.getElementById('iw-chat-input');
-        if (inp) inp.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
       });
 
     } else if (type === 'create') {
