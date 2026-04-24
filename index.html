@@ -92,6 +92,15 @@
       56%  { transform: scale(1);    }
       100% { transform: scale(1);    }
     }
+    @keyframes notif-glow {
+      0%, 100% { box-shadow: 0 0 8px 3px rgba(255,200,80,.28); }
+      50%       { box-shadow: 0 0 16px 6px rgba(255,200,80,.55); }
+    }
+    @keyframes chakra-notif {
+      0%, 100% { box-shadow: 0 0 18px 6px rgba(255,200,80,.22); }
+      50%       { box-shadow: 0 0 28px 12px rgba(255,200,80,.48); }
+    }
+
     /* ── FIRE LOGS (home screen) ────────────────────────────────────── */
     #fire-logs {
       position: absolute;
@@ -390,6 +399,7 @@
       name: 'Snoopy', isMe: true,
       role: 'Seeker & Fire Keeper',
       bio:  'Seeker of stillness, lover of open fields and quiet afternoons.',
+      intention: '',
       avatar: 'snoopy',
       circles: [
         { label: 'Hāmākua',     icon: '🌋', primary: true },
@@ -488,6 +498,27 @@
     ['puna-arts','upcountry'], ['hana','kauai'], ['kauai','manoa'],
     ['kohala','kona-story'],   ['molokai','hamakua'],
   ];
+
+  // ── SESSION STATE ─────────────────────────────────────────────────────
+  const RSVP_STATES    = {};   // eventName → 'going'|'maybe'|'no'
+  const PLEDGE_STATES  = {};   // pledgeIdx → true|false
+  const CREATE_LOG     = [];   // { text, ts } created entries
+
+  // node: matches fire log type or chakra type where the glow should appear
+  const NOTIFICATIONS = [
+    { id: 'n1', icon: '🌟', text: 'Sunrise Ceremony is in 3 days — are you going?',  time: '2h ago',    read: false, node: 'events'    },
+    { id: 'n2', icon: '💬', text: 'Kaimana shared something in Circle Chat',           time: '5h ago',    read: false, node: 'chat'      },
+    { id: 'n3', icon: '🌺', text: 'Leilani invited you to join Healing Arts circle',  time: 'Yesterday', read: false, node: 'invite'    },
+    { id: 'n4', icon: '🌿', text: 'New resource added: Land Stewardship Guide v2',    time: 'Yesterday', read: true,  node: 'resources' },
+  ];
+
+  function hasUnread(nodeType) {
+    return NOTIFICATIONS.some(n => !n.read && n.node === nodeType);
+  }
+
+  function markNodeRead(nodeType) {
+    NOTIFICATIONS.forEach(n => { if (n.node === nodeType) n.read = true; });
+  }
 
   // ── FOREST RING ───────────────────────────────────────────────────────
   function drawForestOn(canvasId, outerR, cx, cy) {
@@ -659,11 +690,13 @@
     const lblSize = Math.max(8, fireSize * 0.11);
     const baseR   = fireSize * 0.74; // distance from center to log
 
+    // 5 nodes evenly spaced — 72° apart, starting from top
     const logs = [
-      { label: 'Events',    icon: '🌟', type: 'events',    angle: -Math.PI * 0.75 },
-      { label: 'Invite',    icon: '✦',  type: 'invite',    angle: -Math.PI / 2    },
-      { label: 'Resources', icon: '📋', type: 'resources', angle: -Math.PI * 0.25 },
-      { label: 'Chat',      icon: '💬', type: 'chat',      angle:  Math.PI / 2    },
+      { label: 'Events',    icon: '🌟', type: 'events',    angle: -Math.PI * 0.90 },
+      { label: 'Invite',    icon: '✦',  type: 'invite',    angle: -Math.PI * 0.50 },
+      { label: 'Resources', icon: '📋', type: 'resources', angle: -Math.PI * 0.10 },
+      { label: 'Circle',    icon: '⬡',  type: 'circle',    angle:  Math.PI * 0.30 },
+      { label: 'Chat',      icon: '💬', type: 'chat',      angle:  Math.PI * 0.70 },
     ];
 
     logs.forEach(log => {
@@ -678,13 +711,17 @@
       const dot = document.createElement('div');
       dot.className = 'fire-log-dot';
       const isInvite = log.type === 'invite';
-      dot.style.cssText = `width:${dotSize}px;height:${dotSize}px;display:flex;align-items:center;justify-content:center;font-size:${dotSize * (isInvite ? 0.34 : 0.42)}px;${isInvite ? 'border-color:rgba(196,160,255,.3);color:rgba(196,160,255,.7);' : ''}`;
+      const isCircle = log.type === 'circle';
+      const hasN     = hasUnread(log.type);
+      dot.style.cssText = `width:${dotSize}px;height:${dotSize}px;display:flex;align-items:center;justify-content:center;font-size:${dotSize * (isInvite ? 0.34 : 0.42)}px;${isInvite ? 'border-color:rgba(196,160,255,.3);color:rgba(196,160,255,.7);' : ''}${isCircle ? 'border-color:rgba(80,180,255,.28);color:rgba(80,180,255,.65);' : ''}${hasN ? 'animation:notif-glow 2.2s ease-in-out infinite;border-color:rgba(255,200,80,.45);' : ''}`;
       dot.textContent = log.icon;
 
       const lbl = document.createElement('div');
       lbl.className = 'fire-log-label';
       lbl.style.fontSize = lblSize + 'px';
       if (isInvite) lbl.style.color = 'rgba(196,160,255,.35)';
+      if (isCircle) lbl.style.color = 'rgba(80,180,255,.32)';
+      if (hasN) lbl.style.color = 'rgba(255,200,80,.45)';
       lbl.textContent = log.label;
 
       wrap.appendChild(dot);
@@ -695,21 +732,45 @@
   }
 
   function openHomePanel(type) {
+    markNodeRead(type);
     if (type === 'events') {
+      const rsvpLabel = v => v === 'going' ? 'Going ✓' : v === 'maybe' ? 'Maybe' : "Can't make it";
+      const rsvpColor = v => v === 'going' ? 'rgba(100,200,100,.7)' : v === 'maybe' ? 'rgba(200,170,60,.6)' : 'rgba(200,80,80,.5)';
       openImmersivePanel(`
         <div style="color:rgba(176,112,64,.28);font-size:10px;letter-spacing:.22em;text-transform:uppercase;text-align:center;margin-bottom:32px;">Upcoming Gatherings</div>
-        ${EVENTS.map(ev => `
-          <div style="display:flex;gap:18px;align-items:flex-start;padding:16px 0;border-bottom:1px solid rgba(176,112,64,.08);">
-            <div style="min-width:36px;text-align:center;">
-              <div style="color:#b07040;font-size:26px;font-weight:200;line-height:1;">${ev.day}</div>
-              <div style="color:rgba(176,112,64,.3);font-size:9px;text-transform:uppercase;letter-spacing:.1em;">${ev.month}</div>
+        ${EVENTS.map((ev, i) => {
+          const rsvp = RSVP_STATES[ev.name];
+          return `
+          <div style="padding:16px 0;border-bottom:1px solid rgba(176,112,64,.08);">
+            <div style="display:flex;gap:18px;align-items:flex-start;margin-bottom:12px;">
+              <div style="min-width:36px;text-align:center;">
+                <div style="color:#b07040;font-size:26px;font-weight:200;line-height:1;">${ev.day}</div>
+                <div style="color:rgba(176,112,64,.3);font-size:9px;text-transform:uppercase;letter-spacing:.1em;">${ev.month}</div>
+              </div>
+              <div>
+                <div style="color:#d8a060;font-size:16px;margin-bottom:4px;">${ev.name}</div>
+                <div style="color:rgba(176,112,64,.35);font-size:12px;">${ev.detail}</div>
+              </div>
             </div>
-            <div>
-              <div style="color:#d8a060;font-size:16px;margin-bottom:4px;">${ev.name}</div>
-              <div style="color:rgba(176,112,64,.35);font-size:12px;">${ev.detail}</div>
+            <div style="display:flex;gap:8px;padding-left:54px;">
+              ${['going','maybe','no'].map(v => `
+                <div class="rsvp-btn" data-event="${ev.name.replace(/"/g,'&quot;')}" data-val="${v}" style="padding:5px 12px;border-radius:14px;font-size:10px;letter-spacing:.1em;cursor:pointer;transition:all .2s;border:1px solid ${rsvp===v ? rsvpColor(v) : 'rgba(176,112,64,.18)'};color:${rsvp===v ? rsvpColor(v) : 'rgba(176,112,64,.35)'};">${rsvpLabel(v)}</div>
+              `).join('')}
             </div>
-          </div>`).join('')}
-      `);
+          </div>`;
+        }).join('')}
+      `, () => {
+        document.querySelectorAll('.rsvp-btn').forEach(btn => {
+          btn.onclick = e => {
+            e.stopPropagation();
+            const evName = btn.dataset.event;
+            const val    = btn.dataset.val;
+            RSVP_STATES[evName] = RSVP_STATES[evName] === val ? null : val;
+            // Re-render
+            openHomePanel('events');
+          };
+        });
+      });
 
     } else if (type === 'chat') {
       chatRecentlyActive = true;
@@ -741,23 +802,45 @@
       });
 
     } else if (type === 'resources') {
+      const RESOURCES = [
+        { title: 'Community Guidelines',  desc: 'How we live and relate to one another', body: 'We practice deep listening, honest communication, and generous presence. We tend each other as we tend the land — with patience, care, and a willingness to be changed by what we encounter.\n\nConflict is held as an invitation to grow closer. We do not avoid hard conversations; we enter them slowly, together.' },
+        { title: 'Land Stewardship Guide', desc: 'Practices for tending the Sanctuary',  body: 'The land speaks when we are quiet enough to hear. Morning walks before 7am allow us to attune before the day begins. Tools are cleaned and returned after every use. Nothing is taken that was not freely given by the ʻāina.\n\nWater is sacred. We conserve, collect, and circulate it as we would any living gift.' },
+        { title: 'Daily Rhythm',           desc: 'Morning practice, meals, and evening circle', body: '6:00am — Morning meditation (optional, fire pit)\n7:30am — Breakfast together\n8:30am — Work parties begin\n12:30pm — Communal lunch\n2:00pm — Rest or personal projects\n5:00pm — Evening fire tending\n6:30pm — Dinner\n8:00pm — Evening circle or story' },
+        { title: 'ʻĀina Map',              desc: 'The land, zones, and sacred sites', body: 'The upper grove holds the oldest trees — approach quietly. The lower garden is tended by the Land Keepers circle. The fire pit at center is the heart of the Sanctuary and is never left unattended.\n\nThe eastern ridge overlooks the coast. Sunrise from there changes everything.' },
+      ];
       openImmersivePanel(`
         <div style="color:rgba(176,112,64,.28);font-size:10px;letter-spacing:.22em;text-transform:uppercase;text-align:center;margin-bottom:6px;">Resources</div>
         <div style="color:rgba(176,112,64,.18);font-size:9px;letter-spacing:.12em;text-transform:uppercase;text-align:center;margin-bottom:32px;">Hāmākua Circle</div>
-        ${[
-          { title: 'Community Guidelines',  desc: 'How we live and relate to one another'       },
-          { title: 'Land Stewardship Guide', desc: 'Practices for tending the Sanctuary'         },
-          { title: 'Daily Rhythm',           desc: 'Morning practice, meals, and evening circle' },
-          { title: 'ʻĀina Map',              desc: 'The land, zones, and sacred sites'           },
-        ].map(r => `
-          <div style="display:flex;gap:14px;align-items:center;padding:16px 0;border-bottom:1px solid rgba(176,112,64,.07);cursor:pointer;">
+        ${RESOURCES.map((r, i) => `
+          <div class="resource-row" data-idx="${i}" style="display:flex;gap:14px;align-items:center;padding:16px 0;border-bottom:1px solid rgba(176,112,64,.07);cursor:pointer;transition:opacity .15s;">
             <div style="flex:1;">
               <div style="color:#d8a060;font-size:15px;margin-bottom:4px;">${r.title}</div>
               <div style="color:rgba(176,112,64,.35);font-size:12px;">${r.desc}</div>
             </div>
             <div style="color:rgba(176,112,64,.25);font-size:20px;">›</div>
           </div>`).join('')}
-      `);
+      `, () => {
+        document.querySelectorAll('.resource-row').forEach(row => {
+          row.onclick = e => {
+            e.stopPropagation();
+            const r = RESOURCES[parseInt(row.dataset.idx)];
+            openImmersivePanel(`
+              <div style="color:rgba(176,112,64,.2);font-size:9px;letter-spacing:.2em;text-transform:uppercase;margin-bottom:6px;cursor:pointer;" id="res-back">← Resources</div>
+              <div style="color:#d8a060;font-size:20px;font-weight:200;margin-bottom:6px;margin-top:20px;line-height:1.3;">${r.title}</div>
+              <div style="color:rgba(176,112,64,.3);font-size:11px;margin-bottom:28px;">${r.desc}</div>
+              <p style="color:rgba(200,144,78,.6);font-size:14px;line-height:1.9;white-space:pre-line;">${r.body}</p>
+            `, () => {
+              const back = document.getElementById('res-back');
+              if (back) back.onclick = e => { e.stopPropagation(); openHomePanel('resources'); };
+            });
+          };
+        });
+      });
+
+    } else if (type === 'circle') {
+      const me = USERS.find(u => u.isMe);
+      const myCircle = COMMUNITIES.find(c => c.isMe);
+      if (myCircle) openManageMembership(myCircle);
 
     } else if (type === 'invite') {
       const me = USERS.find(u => u.isMe);
@@ -1233,6 +1316,10 @@
     // My Circles button
     document.getElementById('disc-my-circles-btn').onclick = e => {
       e.stopPropagation();
+      openMyCirclesPanel();
+    };
+
+    function openMyCirclesPanel() {
       const me = USERS.find(u => u.isMe);
       const circles = me ? me.circles.filter(c => !c.create) : [];
       openImmersivePanel(`
@@ -1243,12 +1330,124 @@
             <div style="color:#d8a060;font-size:15px;flex:1;">${c.label}</div>
             <div style="color:rgba(176,112,64,.22);font-size:20px;">›</div>
           </div>`).join('')}
-        <div style="display:flex;align-items:center;gap:16px;padding:16px 0;cursor:pointer;opacity:.45;">
-          <div style="width:32px;text-align:center;color:rgba(176,112,64,.5);font-size:18px;">✦</div>
-          <div style="color:rgba(176,112,64,.5);font-size:14px;letter-spacing:.06em;">Create a Circle</div>
+        <div id="create-circle-btn" style="display:flex;align-items:center;gap:16px;padding:16px 0;cursor:pointer;">
+          <div style="width:32px;text-align:center;color:rgba(196,160,255,.45);font-size:18px;">✦</div>
+          <div style="color:rgba(196,160,255,.5);font-size:14px;letter-spacing:.06em;">Create a Circle</div>
         </div>
-      `);
-    };
+      `, () => {
+        const btn = document.getElementById('create-circle-btn');
+        if (btn) btn.onclick = e => { e.stopPropagation(); openCreateCircleFlow(); };
+      });
+    }
+
+    function openCreateCircleFlow(step, data) {
+      step = step || 1;
+      data = data || {};
+      const CIRCLE_TYPES = [
+        { key: 'land',    label: 'Land & Stewardship', icon: '🌿' },
+        { key: 'healing', label: 'Healing Arts',        icon: '🌸' },
+        { key: 'arts',    label: 'Creative Arts',       icon: '🎨' },
+        { key: 'story',   label: 'Story & Memory',      icon: '🔥' },
+        { key: 'ohana',   label: 'ʻOhana / Family',     icon: '🌺' },
+      ];
+
+      if (step === 1) {
+        openImmersivePanel(`
+          <div style="color:rgba(196,160,255,.22);font-size:9px;letter-spacing:.24em;text-transform:uppercase;text-align:center;margin-bottom:8px;">New Circle · 1 of 3</div>
+          <div style="color:rgba(196,160,255,.55);font-size:20px;font-weight:200;text-align:center;margin-bottom:36px;line-height:1.45;">What do you name<br>this circle?</div>
+          <input id="cc-name" type="text" placeholder="Circle name…" style="width:100%;background:transparent;border:none;border-bottom:1px solid rgba(196,160,255,.2);padding:10px 0;color:#d8a060;font-size:20px;font-weight:200;outline:none;font-family:inherit;box-sizing:border-box;text-align:center;">
+          <div style="text-align:center;margin-top:40px;">
+            <div id="cc-next1" style="display:inline-block;padding:11px 36px;border:1px solid rgba(196,160,255,.22);border-radius:24px;color:rgba(196,160,255,.5);font-size:10px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;">Continue</div>
+          </div>
+        `, () => {
+          const next = document.getElementById('cc-next1');
+          if (next) next.onclick = e => {
+            e.stopPropagation();
+            const name = (document.getElementById('cc-name').value || '').trim();
+            if (!name) { document.getElementById('cc-name').style.borderBottomColor = 'rgba(255,100,80,.4)'; return; }
+            openCreateCircleFlow(2, { ...data, name });
+          };
+        });
+
+      } else if (step === 2) {
+        openImmersivePanel(`
+          <div style="color:rgba(196,160,255,.22);font-size:9px;letter-spacing:.24em;text-transform:uppercase;text-align:center;margin-bottom:8px;">New Circle · 2 of 3</div>
+          <div style="color:rgba(196,160,255,.55);font-size:20px;font-weight:200;text-align:center;margin-bottom:32px;line-height:1.45;">What kind of circle<br>is ${data.name}?</div>
+          ${CIRCLE_TYPES.map(t => `
+            <div class="cc-type-row" data-key="${t.key}" style="display:flex;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid rgba(196,160,255,.07);cursor:pointer;">
+              <div style="font-size:20px;width:32px;text-align:center;">${t.icon}</div>
+              <div style="color:rgba(196,160,255,.5);font-size:14px;flex:1;">${t.label}</div>
+              <div class="cc-check" style="color:rgba(196,160,255,.0);font-size:14px;">✓</div>
+            </div>`).join('')}
+          <div style="text-align:center;margin-top:28px;">
+            <div id="cc-next2" style="display:inline-block;padding:11px 36px;border:1px solid rgba(196,160,255,.22);border-radius:24px;color:rgba(196,160,255,.5);font-size:10px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;opacity:.4;pointer-events:none;">Continue</div>
+          </div>
+        `, () => {
+          let selectedType = null;
+          document.querySelectorAll('.cc-type-row').forEach(row => {
+            row.onclick = e => {
+              e.stopPropagation();
+              selectedType = row.dataset.key;
+              document.querySelectorAll('.cc-type-row').forEach(r => {
+                const active = r.dataset.key === selectedType;
+                r.querySelector('.cc-check').style.color = active ? 'rgba(196,160,255,.6)' : 'rgba(196,160,255,.0)';
+                r.querySelector('div:nth-child(2)').style.color = active ? 'rgba(196,160,255,.85)' : 'rgba(196,160,255,.5)';
+              });
+              const next = document.getElementById('cc-next2');
+              if (next) { next.style.opacity = '1'; next.style.pointerEvents = 'all'; }
+            };
+          });
+          const next = document.getElementById('cc-next2');
+          if (next) next.onclick = e => {
+            e.stopPropagation();
+            if (!selectedType) return;
+            openCreateCircleFlow(3, { ...data, type: selectedType });
+          };
+        });
+
+      } else if (step === 3) {
+        openImmersivePanel(`
+          <div style="color:rgba(196,160,255,.22);font-size:9px;letter-spacing:.24em;text-transform:uppercase;text-align:center;margin-bottom:8px;">New Circle · 3 of 3</div>
+          <div style="color:rgba(196,160,255,.55);font-size:20px;font-weight:200;text-align:center;margin-bottom:32px;line-height:1.45;">What is the soul<br>of this circle?</div>
+          <textarea id="cc-desc" placeholder="A sentence or two about what you're tending together…" style="width:100%;min-height:120px;background:transparent;border:none;border-bottom:1px solid rgba(196,160,255,.18);padding:10px 0;color:#d8a060;font-size:15px;line-height:1.7;outline:none;font-family:inherit;resize:none;box-sizing:border-box;text-align:center;"></textarea>
+          <div style="text-align:center;margin-top:36px;">
+            <div id="cc-create" style="display:inline-block;padding:12px 40px;border:1px solid rgba(196,160,255,.28);border-radius:28px;color:rgba(196,160,255,.6);font-size:10px;letter-spacing:.22em;text-transform:uppercase;cursor:pointer;">Birth the Circle</div>
+          </div>
+        `, () => {
+          const btn = document.getElementById('cc-create');
+          if (btn) btn.onclick = e => {
+            e.stopPropagation();
+            const desc = (document.getElementById('cc-desc').value || '').trim() || 'A new circle finding its form.';
+            const typeData = CIRCLE_TYPES.find(t => t.key === data.type) || CIRCLE_TYPES[0];
+            const newCircle = { label: data.name, icon: typeData.icon, primary: false };
+            const me = USERS.find(u => u.isMe);
+            if (me) me.circles.push(newCircle);
+            const newComm = {
+              id: 'user-' + Date.now(),
+              name: data.name,
+              type: data.type,
+              desc,
+              members: 1,
+              isMe: false,
+              dist: 0.25,
+              angle: Math.round(Math.random() * 360),
+            };
+            COMMUNITIES.push(newComm);
+            openImmersivePanel(`
+              <div style="text-align:center;padding-top:32px;">
+                <div style="font-size:48px;margin-bottom:24px;">${typeData.icon}</div>
+                <div style="color:#d8a060;font-size:22px;font-weight:200;margin-bottom:10px;">${data.name}</div>
+                <div style="color:rgba(176,112,64,.3);font-size:12px;line-height:1.8;margin-bottom:36px;">Your circle has been kindled.<br>Invite others to join the fire.</div>
+                <div id="cc-done" style="display:inline-block;padding:11px 32px;border:1px solid rgba(176,112,64,.22);border-radius:24px;color:rgba(176,112,64,.55);font-size:10px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;">Done</div>
+              </div>
+            `, () => {
+              const done = document.getElementById('cc-done');
+              if (done) done.onclick = e => { e.stopPropagation(); closeImmersivePanel(); };
+            });
+          };
+        });
+      }
+    }
 
     // Connect action nodes — ring just inside the forest
     const connectItems = [
@@ -1337,18 +1536,119 @@
         <div style="color:rgba(176,112,64,.18);font-size:9px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:28px;">${typeLabel}&nbsp;·&nbsp;${comm.members} members</div>
         <p style="color:rgba(200,144,78,.65);font-size:16px;line-height:1.8;font-weight:300;margin-bottom:36px;">${comm.desc}</p>
         ${comm.isMe
-          ? `<div style="color:rgba(176,112,64,.28);font-size:10px;letter-spacing:.18em;text-transform:uppercase;">Your Circle</div>`
+          ? `<div style="color:rgba(176,112,64,.22);font-size:9px;letter-spacing:.18em;text-transform:uppercase;">Your Circle</div>`
           : `<div id="disc-join-btn" style="display:inline-block;padding:12px 36px;border:1px solid rgba(176,112,64,.22);border-radius:24px;color:rgba(176,112,64,.55);font-size:10px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;">Request to Join</div>`
         }
       </div>
     `, () => {
-      const btn = document.getElementById('disc-join-btn');
-      if (btn) btn.onclick = e => {
+      const joinBtn = document.getElementById('disc-join-btn');
+      if (joinBtn) joinBtn.onclick = e => {
         e.stopPropagation();
-        btn.textContent = 'Request Sent ✓';
-        btn.style.opacity = '.4';
-        btn.style.pointerEvents = 'none';
+        joinBtn.textContent = 'Request Sent ✓';
+        joinBtn.style.opacity = '.4';
+        joinBtn.style.pointerEvents = 'none';
       };
+    });
+  }
+
+  function openManageMembership(comm) {
+    const ROLES = ['Seeker', 'Land Steward', 'Healer', 'Story Keeper', 'Artist', 'Farmer', 'Elder', 'Fire Keeper'];
+    const me = USERS.find(u => u.isMe);
+    const currentRole = me.role || '';
+    openImmersivePanel(`
+      <div style="color:rgba(176,112,64,.28);font-size:10px;letter-spacing:.22em;text-transform:uppercase;text-align:center;margin-bottom:6px;">Membership</div>
+      <div style="color:rgba(176,112,64,.16);font-size:9px;letter-spacing:.14em;text-transform:uppercase;text-align:center;margin-bottom:32px;">${comm.name}</div>
+
+      <div style="margin-bottom:28px;">
+        <div style="color:rgba(176,112,64,.28);font-size:9px;letter-spacing:.2em;text-transform:uppercase;margin-bottom:14px;">Your role in this circle</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          ${ROLES.map(r => `
+            <div class="role-pill" data-role="${r}" style="padding:7px 14px;border-radius:20px;border:1px solid rgba(176,112,64,${currentRole===r?'.45':'.15'});color:rgba(176,112,64,${currentRole===r?'.75':'.35'});font-size:11px;cursor:pointer;transition:all .2s;">${r}</div>
+          `).join('')}
+        </div>
+      </div>
+
+      <div style="margin-bottom:32px;">
+        <div style="color:rgba(176,112,64,.28);font-size:9px;letter-spacing:.2em;text-transform:uppercase;margin-bottom:14px;">Your presence</div>
+        <div style="display:flex;flex-direction:column;gap:0;">
+          ${[
+            { key:'active',  label:'Active',        sub:'Showing up and engaged'         },
+            { key:'space',   label:'Taking Space',  sub:'Present but stepping back'      },
+            { key:'away',    label:'Away',          sub:'Not available right now'         },
+          ].map((s, i) => `
+            <div class="presence-opt" data-status="${s.key}" style="display:flex;align-items:center;gap:14px;padding:13px 0;border-bottom:1px solid rgba(176,112,64,.07);cursor:pointer;">
+              <div style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:${i===0?'rgba(100,200,100,.6)':i===1?'rgba(200,170,60,.5)':'rgba(150,150,150,.3)'}"></div>
+              <div>
+                <div style="color:#d8a060;font-size:14px;margin-bottom:2px;">${s.label}</div>
+                <div style="color:rgba(176,112,64,.3);font-size:11px;">${s.sub}</div>
+              </div>
+              <div class="presence-check" style="margin-left:auto;color:rgba(176,112,64,.0);font-size:14px;">✓</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <div style="text-align:center;padding-top:4px;">
+        <div id="mem-save-btn" style="display:inline-block;padding:11px 36px;border:1px solid rgba(176,112,64,.2);border-radius:24px;color:rgba(176,112,64,.45);font-size:10px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;margin-bottom:24px;">Save</div>
+        <div style="height:1px;background:rgba(176,112,64,.07);margin-bottom:24px;"></div>
+        <div id="mem-leave-btn" style="color:rgba(255,80,80,.25);font-size:10px;letter-spacing:.16em;text-transform:uppercase;cursor:pointer;transition:color .2s;">Leave this circle</div>
+      </div>
+    `, () => {
+      let selectedRole = currentRole;
+      let selectedStatus = 'active';
+
+      // Role pills
+      document.querySelectorAll('.role-pill').forEach(pill => {
+        pill.onclick = e => {
+          e.stopPropagation();
+          selectedRole = pill.dataset.role;
+          document.querySelectorAll('.role-pill').forEach(p => {
+            const active = p.dataset.role === selectedRole;
+            p.style.borderColor = active ? 'rgba(176,112,64,.45)' : 'rgba(176,112,64,.15)';
+            p.style.color = active ? 'rgba(176,112,64,.75)' : 'rgba(176,112,64,.35)';
+          });
+        };
+      });
+
+      // Presence options
+      document.querySelectorAll('.presence-opt').forEach(opt => {
+        opt.onclick = e => {
+          e.stopPropagation();
+          selectedStatus = opt.dataset.status;
+          document.querySelectorAll('.presence-opt').forEach(o => {
+            o.querySelector('.presence-check').style.color =
+              o.dataset.status === selectedStatus ? 'rgba(176,112,64,.55)' : 'rgba(176,112,64,.0)';
+          });
+        };
+      });
+
+      // Save
+      const saveBtn = document.getElementById('mem-save-btn');
+      if (saveBtn) saveBtn.onclick = e => {
+        e.stopPropagation();
+        if (selectedRole) me.role = selectedRole;
+        saveBtn.textContent = 'Saved ✓';
+        saveBtn.style.opacity = '.4';
+        saveBtn.style.pointerEvents = 'none';
+        setTimeout(() => closeImmersivePanel(), 700);
+      };
+
+      // Leave
+      const leaveBtn = document.getElementById('mem-leave-btn');
+      if (leaveBtn) {
+        leaveBtn.onmouseenter = () => leaveBtn.style.color = 'rgba(255,80,80,.55)';
+        leaveBtn.onmouseleave = () => leaveBtn.style.color = 'rgba(255,80,80,.25)';
+        leaveBtn.onclick = e => {
+          e.stopPropagation();
+          leaveBtn.textContent = 'Are you sure? Tap again to leave.';
+          leaveBtn.style.color = 'rgba(255,80,80,.6)';
+          leaveBtn.onclick = e2 => {
+            e2.stopPropagation();
+            comm.isMe = false;
+            closeImmersivePanel();
+          };
+        };
+      }
     });
   }
 
@@ -1377,7 +1677,7 @@
     { id: 'heart',  label: '',            color: '#60e060', glow: 'rgba(40,190,40,.5)',   type: 'global'      },
     { id: 'solar',  label: 'Commitments', color: '#f0d040', glow: 'rgba(210,170,20,.4)', type: 'commitments' },
     { id: 'sacral', label: 'Create',      color: '#ff9840', glow: 'rgba(230,120,20,.4)', type: 'create'      },
-    { id: 'root',   label: 'Ground',      color: '#ff6868', glow: 'rgba(200,50,50,.4)',  type: 'ground'      },
+    { id: 'root',   label: 'Root',        color: '#ff6868', glow: 'rgba(200,50,50,.4)',  type: 'root'        },
   ];
 
   function buildInnerwork() {
@@ -1464,16 +1764,18 @@
       const ang     = outerAngles[ch.id] !== undefined ? outerAngles[ch.id] : 0;
       const cosA    = Math.cos(ang * Math.PI / 180);
 
+      const chHasNotif = !isHeart && hasUnread(ch.type);
       const node = document.createElement('div');
       node.style.cssText = `
         position:absolute;left:${x}px;top:${y}px;
         transform:translate(-50%,-50%);
         width:${d}px;height:${d}px;border-radius:50%;
         background:rgba(2,8,3,.94);
-        border:1px solid ${ch.color}44;
+        border:1px solid ${chHasNotif ? 'rgba(255,210,80,.55)' : ch.color + '44'};
         box-shadow:0 0 ${isHeart ? 26 : 14}px ${isHeart ? 10 : 4}px ${ch.glow};
         display:flex;align-items:center;justify-content:center;
-        cursor:pointer;z-index:2;`;
+        cursor:pointer;z-index:2;
+        ${chHasNotif ? 'animation:chakra-notif 2.6s ease-in-out infinite;' : ''}`;
 
       const dot = document.createElement('div');
       dot.style.cssText = `
@@ -1562,17 +1864,59 @@
   ];
 
   function openIntentionPanel(type) {
+    markNodeRead(type);
     if (type === 'journal') {
+      function loadJournal() {
+        try { return JSON.parse(localStorage.getItem('fc_journal') || '[]'); } catch(e) { return []; }
+      }
+      function saveJournalEntry(text) {
+        const entries = loadJournal();
+        entries.unshift({ text, ts: Date.now() });
+        localStorage.setItem('fc_journal', JSON.stringify(entries.slice(0, 40)));
+      }
+      function fmtEntryDate(ts) {
+        const d = new Date(ts);
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' · ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      }
+
+      function openJournalWrite() {
+        openImmersivePanel(`
+          <div style="color:rgba(130,130,255,.2);font-size:9px;letter-spacing:.2em;text-transform:uppercase;margin-bottom:8px;cursor:pointer;" id="journal-back">← Journal</div>
+          <p style="color:rgba(196,148,78,.7);font-size:17px;line-height:1.75;text-align:center;font-style:italic;font-weight:300;margin-bottom:28px;margin-top:20px;">${DAILY_PROMPT}</p>
+          <textarea id="iw-journal-text" style="width:100%;min-height:160px;background:rgba(255,255,255,.02);border:none;border-bottom:1px solid rgba(176,112,64,.14);padding:14px 0;color:#d8a060;font-size:15px;line-height:1.7;resize:none;outline:none;font-family:inherit;box-sizing:border-box;" placeholder="Write here…"></textarea>
+          <div style="text-align:right;margin-top:16px;">
+            <div id="iw-journal-save" style="display:inline-block;padding:9px 24px;border:1px solid rgba(176,112,64,.22);border-radius:20px;color:rgba(176,112,64,.6);font-size:10px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;">Save</div>
+          </div>
+        `, () => {
+          const back = document.getElementById('journal-back');
+          if (back) back.onclick = e => { e.stopPropagation(); openIntentionPanel('journal'); };
+          const save = document.getElementById('iw-journal-save');
+          if (save) save.onclick = e => {
+            e.stopPropagation();
+            const text = (document.getElementById('iw-journal-text').value || '').trim();
+            if (text) { saveJournalEntry(text); }
+            openIntentionPanel('journal');
+          };
+        });
+      }
+
+      const entries = loadJournal();
       openImmersivePanel(`
-        <div style="color:rgba(176,112,64,.28);font-size:10px;letter-spacing:.22em;text-transform:uppercase;text-align:center;margin-bottom:20px;">Journal</div>
-        <p style="color:rgba(196,148,78,.7);font-size:17px;line-height:1.75;text-align:center;font-style:italic;font-weight:300;margin-bottom:28px;">${DAILY_PROMPT}</p>
-        <textarea id="iw-journal-text" style="width:100%;min-height:160px;background:rgba(255,255,255,.02);border:none;border-bottom:1px solid rgba(176,112,64,.14);padding:14px 0;color:#d8a060;font-size:15px;line-height:1.7;resize:none;outline:none;font-family:inherit;box-sizing:border-box;" placeholder="Write here…"></textarea>
-        <div style="text-align:right;margin-top:16px;">
-          <div id="iw-journal-save" style="display:inline-block;padding:9px 24px;border:1px solid rgba(176,112,64,.22);border-radius:20px;color:rgba(176,112,64,.6);font-size:10px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;">Save</div>
+        <div style="color:rgba(176,112,64,.28);font-size:10px;letter-spacing:.22em;text-transform:uppercase;text-align:center;margin-bottom:24px;">Journal</div>
+        <div style="text-align:center;margin-bottom:28px;">
+          <div id="journal-new-btn" style="display:inline-block;padding:9px 28px;border:1px solid rgba(128,128,255,.28);border-radius:20px;color:rgba(128,128,255,.55);font-size:10px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;">+ New Entry</div>
         </div>
+        ${entries.length === 0
+          ? `<p style="color:rgba(176,112,64,.22);font-size:13px;text-align:center;line-height:1.8;font-style:italic;">Your journal is waiting.<br>Begin when you're ready.</p>`
+          : entries.map(e => `
+              <div style="padding:16px 0;border-bottom:1px solid rgba(176,112,64,.07);">
+                <div style="color:rgba(176,112,64,.25);font-size:9px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px;">${fmtEntryDate(e.ts)}</div>
+                <p style="color:rgba(200,144,78,.6);font-size:14px;line-height:1.7;margin:0;">${e.text.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</p>
+              </div>`).join('')
+        }
       `, () => {
-        const save = document.getElementById('iw-journal-save');
-        if (save) save.onclick = e => { e.stopPropagation(); closeImmersivePanel(); };
+        const btn = document.getElementById('journal-new-btn');
+        if (btn) btn.onclick = e => { e.stopPropagation(); openJournalWrite(); };
       });
 
     } else if (type === 'meditation') {
@@ -1583,7 +1927,10 @@
       openImmersivePanel(`
         <div style="color:rgba(176,112,64,.28);font-size:10px;letter-spacing:.22em;text-transform:uppercase;text-align:center;margin-bottom:28px;">Commitments</div>
         <div style="color:rgba(176,112,64,.25);font-size:9px;letter-spacing:.2em;text-transform:uppercase;margin-bottom:12px;">Gatherings</div>
-        ${EVENTS.map(ev => `
+        ${EVENTS.map(ev => {
+          const rsvp = RSVP_STATES[ev.name];
+          const dot = rsvp === 'going' ? 'rgba(100,200,100,.65)' : rsvp === 'maybe' ? 'rgba(200,170,60,.5)' : 'rgba(100,100,120,.3)';
+          return `
           <div style="display:flex;gap:16px;align-items:center;padding:14px 0;border-bottom:1px solid rgba(176,112,64,.07);">
             <div style="text-align:center;min-width:32px;">
               <div style="color:#b07040;font-size:20px;font-weight:200;line-height:1;">${ev.day}</div>
@@ -1593,22 +1940,65 @@
               <div style="color:#d8a060;font-size:14px;">${ev.name}</div>
               <div style="color:rgba(176,112,64,.32);font-size:11px;margin-top:2px;">${ev.detail}</div>
             </div>
-            <div style="width:7px;height:7px;border-radius:50%;background:rgba(100,200,100,.5);flex-shrink:0;"></div>
-          </div>`).join('')}
+            <div style="color:rgba(176,112,64,.28);font-size:10px;letter-spacing:.08em;">${rsvp || '—'}</div>
+            <div style="width:7px;height:7px;border-radius:50%;background:${dot};flex-shrink:0;"></div>
+          </div>`;
+        }).join('')}
         <div style="color:rgba(176,112,64,.25);font-size:9px;letter-spacing:.2em;text-transform:uppercase;margin-top:24px;margin-bottom:12px;">Pledges</div>
-        ${PLEDGES.map(p => `
-          <div style="display:flex;gap:14px;align-items:flex-start;padding:12px 0;border-bottom:1px solid rgba(176,112,64,.07);">
-            <div style="width:15px;height:15px;border-radius:50%;border:1px solid rgba(176,112,64,.25);flex-shrink:0;margin-top:3px;cursor:pointer;"></div>
-            <div>
-              <div style="color:#d8a060;font-size:14px;margin-bottom:2px;">${p.text}</div>
+        ${PLEDGES.map((p, i) => {
+          const done = PLEDGE_STATES[i];
+          return `
+          <div class="pledge-row" data-idx="${i}" style="display:flex;gap:14px;align-items:flex-start;padding:12px 0;border-bottom:1px solid rgba(176,112,64,.07);cursor:pointer;">
+            <div class="pledge-circle" style="width:15px;height:15px;border-radius:50%;flex-shrink:0;margin-top:3px;transition:all .25s;
+              border:1px solid rgba(176,112,64,${done ? '0' : '.25'});
+              background:${done ? 'rgba(100,200,100,.55)' : 'transparent'};
+              display:flex;align-items:center;justify-content:center;font-size:9px;color:rgba(255,255,255,.8);">
+              ${done ? '✓' : ''}
+            </div>
+            <div style="flex:1;">
+              <div style="color:${done ? 'rgba(176,112,64,.35)' : '#d8a060'};font-size:14px;margin-bottom:2px;${done ? 'text-decoration:line-through;' : ''}">${p.text}</div>
               <div style="color:rgba(176,112,64,.32);font-size:11px;">${p.due}</div>
             </div>
-          </div>`).join('')}
-        <div style="display:flex;gap:12px;align-items:center;padding:16px 0;cursor:pointer;opacity:.5;">
+          </div>`;
+        }).join('')}
+        <div id="pledge-add-row" style="display:flex;gap:12px;align-items:center;padding:16px 0;cursor:pointer;">
           <div style="width:15px;height:15px;border-radius:50%;border:1px dashed rgba(176,112,64,.3);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:rgba(176,112,64,.5);font-size:12px;">+</div>
           <div style="color:rgba(176,112,64,.4);font-size:13px;letter-spacing:.06em;">Add a pledge</div>
         </div>
-      `);
+        <div id="pledge-add-form" style="display:none;padding-bottom:16px;">
+          <input id="pledge-text" type="text" placeholder="I commit to…" style="width:100%;background:transparent;border:none;border-bottom:1px solid rgba(176,112,64,.18);padding:8px 0;color:#d8a060;font-size:14px;outline:none;font-family:inherit;box-sizing:border-box;margin-bottom:8px;">
+          <input id="pledge-due" type="text" placeholder="By when?" style="width:100%;background:transparent;border:none;border-bottom:1px solid rgba(176,112,64,.12);padding:8px 0;color:rgba(200,144,78,.6);font-size:12px;outline:none;font-family:inherit;box-sizing:border-box;margin-bottom:16px;">
+          <div style="text-align:right;"><div id="pledge-save" style="display:inline-block;padding:7px 20px;border:1px solid rgba(176,112,64,.22);border-radius:16px;color:rgba(176,112,64,.55);font-size:10px;letter-spacing:.16em;text-transform:uppercase;cursor:pointer;">Add</div></div>
+        </div>
+      `, () => {
+        // Toggle pledge done state
+        document.querySelectorAll('.pledge-row').forEach(row => {
+          row.onclick = e => {
+            e.stopPropagation();
+            const idx = parseInt(row.dataset.idx);
+            PLEDGE_STATES[idx] = !PLEDGE_STATES[idx];
+            openIntentionPanel('commitments');
+          };
+        });
+        // Add pledge form
+        const addRow = document.getElementById('pledge-add-row');
+        const addForm = document.getElementById('pledge-add-form');
+        if (addRow && addForm) {
+          addRow.onclick = e => {
+            e.stopPropagation();
+            addRow.style.display = 'none';
+            addForm.style.display = 'block';
+          };
+        }
+        const saveBtn = document.getElementById('pledge-save');
+        if (saveBtn) saveBtn.onclick = e => {
+          e.stopPropagation();
+          const text = (document.getElementById('pledge-text').value || '').trim();
+          const due  = (document.getElementById('pledge-due').value  || '').trim();
+          if (text) { PLEDGES.push({ text, due: due || 'Ongoing' }); }
+          openIntentionPanel('commitments');
+        };
+      });
 
     } else if (type === 'chat') {
       openImmersivePanel(`
@@ -1639,16 +2029,102 @@
       });
 
     } else if (type === 'create') {
+      const CREATE_PROMPTS = [
+        'What wants to be made through you today?',
+        'What are you in the middle of creating?',
+        'What idea keeps returning to you?',
+        'What would you make if fear stepped aside?',
+        'What are your hands drawn to right now?',
+      ];
+      const todayPrompt = CREATE_PROMPTS[new Date().getDate() % CREATE_PROMPTS.length];
       openImmersivePanel(`
         <div style="color:rgba(255,152,64,.28);font-size:10px;letter-spacing:.22em;text-transform:uppercase;text-align:center;margin-bottom:32px;">Create</div>
-        <p style="color:rgba(255,152,64,.55);font-size:20px;line-height:1.8;text-align:center;font-style:italic;font-weight:200;">What wants to be made through you today?</p>
-      `);
+        <p style="color:rgba(255,152,64,.55);font-size:19px;line-height:1.8;text-align:center;font-style:italic;font-weight:200;margin-bottom:32px;">${todayPrompt}</p>
+        <textarea id="create-text" placeholder="Name what you're making…" style="width:100%;min-height:120px;background:rgba(255,255,255,.02);border:none;border-bottom:1px solid rgba(255,152,64,.14);padding:12px 0;color:#d8a060;font-size:15px;line-height:1.7;resize:none;outline:none;font-family:inherit;box-sizing:border-box;"></textarea>
+        <div style="text-align:right;margin-top:16px;">
+          <div id="create-log-btn" style="display:inline-block;padding:9px 24px;border:1px solid rgba(255,152,64,.22);border-radius:20px;color:rgba(255,152,64,.6);font-size:10px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;">Log it</div>
+        </div>
+        ${CREATE_LOG.length > 0 ? `
+          <div style="margin-top:36px;">
+            <div style="color:rgba(255,152,64,.22);font-size:9px;letter-spacing:.2em;text-transform:uppercase;margin-bottom:14px;">Recent creations</div>
+            ${CREATE_LOG.slice(0,5).map(entry => `
+              <div style="padding:10px 0;border-bottom:1px solid rgba(255,152,64,.06);">
+                <div style="color:rgba(255,152,64,.22);font-size:9px;letter-spacing:.1em;margin-bottom:4px;">${new Date(entry.ts).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>
+                <div style="color:rgba(200,144,78,.55);font-size:13px;line-height:1.6;">${entry.text.replace(/</g,'&lt;')}</div>
+              </div>`).join('')}
+          </div>` : ''}
+      `, () => {
+        const btn = document.getElementById('create-log-btn');
+        if (btn) btn.onclick = e => {
+          e.stopPropagation();
+          const text = (document.getElementById('create-text').value || '').trim();
+          if (text) { CREATE_LOG.unshift({ text, ts: Date.now() }); }
+          openIntentionPanel('create');
+        };
+      });
 
-    } else if (type === 'ground') {
+    } else if (type === 'root') {
+      const me = USERS.find(u => u.isMe);
+      const sz = 64;
       openImmersivePanel(`
-        <div style="color:rgba(255,104,104,.28);font-size:10px;letter-spacing:.22em;text-transform:uppercase;text-align:center;margin-bottom:32px;">Ground</div>
-        <p style="color:rgba(255,104,104,.55);font-size:20px;line-height:1.8;text-align:center;font-style:italic;font-weight:200;">Feel your feet. Feel the earth beneath you. You are here.</p>
-      `);
+        <div style="color:rgba(255,104,104,.22);font-size:9px;letter-spacing:.26em;text-transform:uppercase;text-align:center;margin-bottom:32px;">Root</div>
+
+        <div style="display:flex;justify-content:center;margin-bottom:24px;">
+          <div style="width:${sz}px;height:${sz}px;border-radius:50%;overflow:hidden;border:1px solid rgba(255,104,104,.18);">${makeAvatarSvg(me, sz)}</div>
+        </div>
+
+        <div style="margin-bottom:20px;">
+          <div style="color:rgba(255,104,104,.25);font-size:9px;letter-spacing:.2em;text-transform:uppercase;margin-bottom:8px;">Name</div>
+          <input id="root-name" type="text" value="${me.name}" style="width:100%;background:transparent;border:none;border-bottom:1px solid rgba(255,104,104,.18);padding:8px 0;color:#d8a060;font-size:20px;font-weight:200;outline:none;font-family:inherit;box-sizing:border-box;">
+        </div>
+
+        <div style="margin-bottom:20px;">
+          <div style="color:rgba(255,104,104,.25);font-size:9px;letter-spacing:.2em;text-transform:uppercase;margin-bottom:8px;">Role</div>
+          <input id="root-role" type="text" value="${me.role || ''}" style="width:100%;background:transparent;border:none;border-bottom:1px solid rgba(255,104,104,.15);padding:8px 0;color:rgba(200,144,78,.7);font-size:14px;letter-spacing:.06em;outline:none;font-family:inherit;box-sizing:border-box;">
+        </div>
+
+        <div style="margin-bottom:20px;">
+          <div style="color:rgba(255,104,104,.25);font-size:9px;letter-spacing:.2em;text-transform:uppercase;margin-bottom:8px;">Bio</div>
+          <textarea id="root-bio" style="width:100%;background:transparent;border:none;border-bottom:1px solid rgba(255,104,104,.12);padding:8px 0;color:rgba(200,144,78,.6);font-size:14px;line-height:1.7;outline:none;font-family:inherit;resize:none;min-height:72px;box-sizing:border-box;">${me.bio || ''}</textarea>
+        </div>
+
+        <div style="margin-bottom:36px;">
+          <div style="color:rgba(255,104,104,.25);font-size:9px;letter-spacing:.2em;text-transform:uppercase;margin-bottom:8px;">What I'm tending this season</div>
+          <input id="root-intention" type="text" value="${me.intention || ''}" placeholder="One thing…" style="width:100%;background:transparent;border:none;border-bottom:1px solid rgba(255,104,104,.12);padding:8px 0;color:rgba(200,144,78,.5);font-size:14px;font-style:italic;outline:none;font-family:inherit;box-sizing:border-box;">
+        </div>
+
+        <div style="text-align:center;">
+          <div id="root-save-btn" style="display:inline-block;padding:11px 36px;border:1px solid rgba(255,104,104,.2);border-radius:24px;color:rgba(255,104,104,.45);font-size:10px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;transition:all .2s;">Save</div>
+        </div>
+      `, () => {
+        const saveBtn = document.getElementById('root-save-btn');
+        if (!saveBtn) return;
+        saveBtn.onclick = e => {
+          e.stopPropagation();
+          const name      = (document.getElementById('root-name').value      || '').trim();
+          const role      = (document.getElementById('root-role').value      || '').trim();
+          const bio       = (document.getElementById('root-bio').value       || '').trim();
+          const intention = (document.getElementById('root-intention').value || '').trim();
+          if (name) me.name = name;
+          if (role) me.role = role;
+          if (bio)  me.bio  = bio;
+          me.intention = intention;
+          // Reflect name change in avatar label on home screen
+          document.querySelectorAll('.avatar-label').forEach(el => {
+            if (el.textContent === me.name || name) {
+              const wrap = el.closest('.avatar');
+              if (wrap) {
+                const circle = wrap.querySelector('.avatar-circle.me');
+                if (circle) el.textContent = name || me.name;
+              }
+            }
+          });
+          saveBtn.textContent = 'Saved ✓';
+          saveBtn.style.opacity = '.4';
+          saveBtn.style.pointerEvents = 'none';
+          setTimeout(() => closeImmersivePanel(), 800);
+        };
+      });
     }
   }
 
