@@ -358,6 +358,12 @@
   </div>
 </div>
 
+<!-- ARRIVAL SCREEN -->
+<div id="arrival-screen" style="position:fixed;inset:0;z-index:700;background:#080503;opacity:0;pointer-events:none;transition:opacity .9s ease;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+  <canvas id="arrival-fire-canvas" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-58%);pointer-events:none;z-index:1;opacity:.55;"></canvas>
+  <div id="arrival-content" style="position:relative;z-index:2;width:100%;max-width:400px;padding:0 36px;box-sizing:border-box;transition:opacity .55s ease,transform .55s ease;"></div>
+</div>
+
 <!-- UNIVERSAL IMMERSIVE PANEL -->
 <div id="immersive-panel" style="
   position:fixed;inset:0;z-index:500;
@@ -654,9 +660,10 @@
     const baseR   = fireSize * 0.74; // distance from center to log
 
     const logs = [
-      { label: 'Events',    icon: '🌟', type: 'events',    angle: -Math.PI * 0.72 },
+      { label: 'Events',    icon: '🌟', type: 'events',    angle: -Math.PI * 0.75 },
+      { label: 'Invite',    icon: '✦',  type: 'invite',    angle: -Math.PI / 2    },
+      { label: 'Resources', icon: '📋', type: 'resources', angle: -Math.PI * 0.25 },
       { label: 'Chat',      icon: '💬', type: 'chat',      angle:  Math.PI / 2    },
-      { label: 'Resources', icon: '📋', type: 'resources', angle: -Math.PI * 0.28 },
     ];
 
     logs.forEach(log => {
@@ -670,12 +677,14 @@
 
       const dot = document.createElement('div');
       dot.className = 'fire-log-dot';
-      dot.style.cssText = `width:${dotSize}px;height:${dotSize}px;display:flex;align-items:center;justify-content:center;font-size:${dotSize * 0.42}px;`;
+      const isInvite = log.type === 'invite';
+      dot.style.cssText = `width:${dotSize}px;height:${dotSize}px;display:flex;align-items:center;justify-content:center;font-size:${dotSize * (isInvite ? 0.34 : 0.42)}px;${isInvite ? 'border-color:rgba(196,160,255,.3);color:rgba(196,160,255,.7);' : ''}`;
       dot.textContent = log.icon;
 
       const lbl = document.createElement('div');
       lbl.className = 'fire-log-label';
       lbl.style.fontSize = lblSize + 'px';
+      if (isInvite) lbl.style.color = 'rgba(196,160,255,.35)';
       lbl.textContent = log.label;
 
       wrap.appendChild(dot);
@@ -749,7 +758,218 @@
             <div style="color:rgba(176,112,64,.25);font-size:20px;">›</div>
           </div>`).join('')}
       `);
+
+    } else if (type === 'invite') {
+      const me = USERS.find(u => u.isMe);
+      const myCircles = me ? me.circles.filter(c => !c.create) : [];
+      openImmersivePanel(`
+        <div style="color:rgba(196,160,255,.28);font-size:10px;letter-spacing:.22em;text-transform:uppercase;text-align:center;margin-bottom:32px;">Invite Someone</div>
+
+        <div style="margin-bottom:22px;">
+          <div style="color:rgba(176,112,64,.3);font-size:9px;letter-spacing:.2em;text-transform:uppercase;margin-bottom:8px;">Invite to</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            ${myCircles.map((c, i) => `<div class="inv-circle-pill" data-idx="${i}" style="padding:6px 14px;border-radius:20px;border:1px solid rgba(176,112,64,${i===0?'.45':'.18'});color:rgba(176,112,64,${i===0?'.7':'.35'});font-size:11px;cursor:pointer;transition:all .2s;">${c.icon} ${c.label}</div>`).join('')}
+          </div>
+        </div>
+
+        <div style="margin-bottom:22px;">
+          <div style="color:rgba(176,112,64,.3);font-size:9px;letter-spacing:.2em;text-transform:uppercase;margin-bottom:8px;">Their name</div>
+          <input id="inv-name" type="text" placeholder="Who are you calling in?" style="width:100%;background:transparent;border:none;border-bottom:1px solid rgba(176,112,64,.18);padding:10px 0;color:#d8a060;font-size:16px;outline:none;font-family:inherit;box-sizing:border-box;">
+        </div>
+
+        <div style="margin-bottom:22px;">
+          <div style="color:rgba(176,112,64,.3);font-size:9px;letter-spacing:.2em;text-transform:uppercase;margin-bottom:8px;">How to reach them</div>
+          <input id="inv-contact" type="text" placeholder="Phone or email" style="width:100%;background:transparent;border:none;border-bottom:1px solid rgba(176,112,64,.18);padding:10px 0;color:#d8a060;font-size:16px;outline:none;font-family:inherit;box-sizing:border-box;">
+        </div>
+
+        <div style="margin-bottom:36px;">
+          <div style="color:rgba(176,112,64,.3);font-size:9px;letter-spacing:.2em;text-transform:uppercase;margin-bottom:8px;">A personal note <span style="opacity:.5;">(optional)</span></div>
+          <textarea id="inv-note" placeholder="Why you're inviting them…" style="width:100%;background:transparent;border:none;border-bottom:1px solid rgba(176,112,64,.12);padding:10px 0;color:#d8a060;font-size:14px;line-height:1.65;outline:none;font-family:inherit;resize:none;min-height:68px;box-sizing:border-box;"></textarea>
+        </div>
+
+        <div id="inv-send-wrap" style="text-align:center;">
+          <div id="inv-send-btn" style="display:inline-block;padding:13px 40px;border:1px solid rgba(196,160,255,.22);border-radius:28px;color:rgba(196,160,255,.55);font-size:10px;letter-spacing:.22em;text-transform:uppercase;cursor:pointer;">Send Invitation</div>
+        </div>
+        <div id="inv-success" style="display:none;text-align:center;">
+          <div style="color:rgba(196,160,255,.4);font-size:14px;letter-spacing:.06em;margin-bottom:10px;">Invitation sent.</div>
+          <div style="color:rgba(176,112,64,.22);font-size:11px;line-height:1.8;margin-bottom:28px;">They'll receive a personal link<br>to join the circle.</div>
+          <div id="inv-preview-btn" style="display:inline-block;padding:9px 24px;border:1px solid rgba(176,112,64,.15);border-radius:20px;color:rgba(176,112,64,.3);font-size:9px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;">Preview their arrival →</div>
+        </div>
+      `, () => {
+        // Circle pill selection
+        let selectedIdx = 0;
+        document.querySelectorAll('.inv-circle-pill').forEach(pill => {
+          pill.onclick = e => {
+            e.stopPropagation();
+            selectedIdx = parseInt(pill.dataset.idx);
+            document.querySelectorAll('.inv-circle-pill').forEach((p, i) => {
+              p.style.borderColor = i === selectedIdx ? 'rgba(176,112,64,.45)' : 'rgba(176,112,64,.18)';
+              p.style.color = i === selectedIdx ? 'rgba(176,112,64,.7)' : 'rgba(176,112,64,.35)';
+            });
+          };
+        });
+        // Send
+        const sendBtn = document.getElementById('inv-send-btn');
+        if (sendBtn) sendBtn.onclick = e => {
+          e.stopPropagation();
+          const name    = (document.getElementById('inv-name').value || '').trim();
+          const contact = (document.getElementById('inv-contact').value || '').trim();
+          if (!name || !contact) {
+            sendBtn.style.borderColor = 'rgba(255,100,80,.4)';
+            sendBtn.style.color = 'rgba(255,120,80,.5)';
+            setTimeout(() => {
+              sendBtn.style.borderColor = 'rgba(196,160,255,.22)';
+              sendBtn.style.color = 'rgba(196,160,255,.55)';
+            }, 1200);
+            return;
+          }
+          const inviteeName = name;
+          const me = USERS.find(u => u.isMe);
+          document.getElementById('inv-send-wrap').style.display = 'none';
+          document.getElementById('inv-success').style.display = 'block';
+          const previewBtn = document.getElementById('inv-preview-btn');
+          if (previewBtn) previewBtn.onclick = e => {
+            e.stopPropagation();
+            closeImmersivePanel();
+            setTimeout(() => openArrivalScreen(inviteeName, me), 500);
+          };
+        };
+      });
     }
+  }
+
+  // ── ARRIVAL SCREEN ────────────────────────────────────────────────────
+  let arrivalFireRAF = null;
+
+  function openArrivalScreen(inviteeName, inviter) {
+    const screen = document.getElementById('arrival-screen');
+    screen.style.pointerEvents = 'all';
+    screen.getBoundingClientRect();
+    screen.style.opacity = '1';
+
+    // Start ambient fire
+    const fc = document.getElementById('arrival-fire-canvas');
+    const sz = Math.round(Math.min(innerWidth, innerHeight) * 0.52);
+    fc.width = fc.height = sz;
+    fc.style.width = fc.style.height = sz + 'px';
+    if (arrivalFireRAF) cancelAnimationFrame(arrivalFireRAF);
+    runArrivalFire(fc);
+
+    // Show inviter context then step through questions
+    const steps = [
+      { question: 'What do we call you?',             placeholder: 'Your name…',        type: 'input'    },
+      { question: 'What called you here?',             placeholder: 'In your own words…', type: 'textarea' },
+      { question: 'What do you want to tend\nthis season?', placeholder: 'One thing…',  type: 'input'    },
+    ];
+    const answers = {};
+    const iSz = 42;
+    const inviterHtml = inviter ? `
+      <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:36px;">
+        <div style="width:${iSz}px;height:${iSz}px;border-radius:50%;overflow:hidden;border:1px solid rgba(176,112,64,.2);margin-bottom:9px;">${makeAvatarSvg(inviter, iSz)}</div>
+        <div style="color:rgba(176,112,64,.4);font-size:12px;margin-bottom:2px;">${inviter.name} has invited you</div>
+        <div style="color:rgba(176,112,64,.18);font-size:9px;letter-spacing:.18em;text-transform:uppercase;">to join the circle</div>
+      </div>` : '';
+
+    function showStep(idx) {
+      const content = document.getElementById('arrival-content');
+      content.style.opacity = '0';
+      content.style.transform = 'translateY(14px)';
+
+      setTimeout(() => {
+        const step   = steps[idx];
+        const isLast = idx === steps.length - 1;
+        content.innerHTML = `
+          ${idx === 0 ? inviterHtml : ''}
+          <div style="color:rgba(176,112,64,.22);font-size:9px;letter-spacing:.22em;text-transform:uppercase;text-align:center;margin-bottom:12px;">${idx + 1} of ${steps.length}</div>
+          <p style="color:rgba(210,158,88,.7);font-size:22px;font-weight:200;line-height:1.45;text-align:center;white-space:pre-line;margin-bottom:36px;">${step.question}</p>
+          ${step.type === 'textarea'
+            ? `<textarea id="arrival-input" placeholder="${step.placeholder}" style="width:100%;min-height:88px;background:transparent;border:none;border-bottom:1px solid rgba(176,112,64,.18);padding:10px 0;color:#d8a060;font-size:16px;line-height:1.65;outline:none;font-family:inherit;resize:none;box-sizing:border-box;text-align:center;"></textarea>`
+            : `<input id="arrival-input" type="text" placeholder="${step.placeholder}" style="width:100%;background:transparent;border:none;border-bottom:1px solid rgba(176,112,64,.18);padding:10px 0;color:#d8a060;font-size:20px;outline:none;font-family:inherit;box-sizing:border-box;text-align:center;">`
+          }
+          <div style="text-align:center;margin-top:36px;">
+            <div id="arrival-next" style="display:inline-block;padding:12px 40px;border:1px solid rgba(176,112,64,.2);border-radius:28px;color:rgba(176,112,64,.4);font-size:10px;letter-spacing:.22em;text-transform:uppercase;cursor:pointer;">${isLast ? 'Enter the Circle' : 'Continue'}</div>
+          </div>
+        `;
+        content.style.transition = 'opacity .55s ease, transform .55s ease';
+        content.getBoundingClientRect();
+        content.style.opacity = '1';
+        content.style.transform = 'translateY(0)';
+
+        const input = document.getElementById('arrival-input');
+        if (input) setTimeout(() => input.focus(), 350);
+
+        const advance = () => {
+          answers[idx] = (document.getElementById('arrival-input').value || '').trim();
+          content.style.opacity = '0';
+          content.style.transform = 'translateY(-10px)';
+          if (idx < steps.length - 1) {
+            setTimeout(() => showStep(idx + 1), 480);
+          } else {
+            setTimeout(() => showWelcome(answers), 480);
+          }
+        };
+
+        document.getElementById('arrival-next').onclick = e => { e.stopPropagation(); advance(); };
+        if (input) input.addEventListener('keydown', e => {
+          if (e.key === 'Enter' && step.type !== 'textarea') { e.preventDefault(); advance(); }
+        });
+      }, 340);
+    }
+
+    function showWelcome(answers) {
+      const content = document.getElementById('arrival-content');
+      content.innerHTML = `
+        <div style="text-align:center;">
+          <div style="color:rgba(176,112,64,.25);font-size:9px;letter-spacing:.28em;text-transform:uppercase;margin-bottom:18px;">Welcome</div>
+          <div style="color:#d8a060;font-size:32px;font-weight:200;letter-spacing:.05em;margin-bottom:10px;">${answers[0] || 'Friend'}</div>
+          <div style="color:rgba(176,112,64,.22);font-size:12px;line-height:1.9;margin-bottom:36px;">The circle is glad you're here.</div>
+          ${answers[2] ? `<div style="color:rgba(176,112,64,.18);font-size:11px;letter-spacing:.1em;font-style:italic;">${answers[2]}</div>` : ''}
+        </div>
+      `;
+      content.style.opacity = '1';
+      content.style.transform = 'translateY(0)';
+      setTimeout(() => {
+        const scr = document.getElementById('arrival-screen');
+        scr.style.opacity = '0';
+        setTimeout(() => {
+          scr.style.pointerEvents = 'none';
+          if (arrivalFireRAF) { cancelAnimationFrame(arrivalFireRAF); arrivalFireRAF = null; }
+          document.getElementById('arrival-content').innerHTML = '';
+        }, 900);
+      }, 3000);
+    }
+
+    showStep(0);
+  }
+
+  function runArrivalFire(canvas) {
+    const ctx = canvas.getContext('2d');
+    const sz = canvas.width, cx = sz / 2, cy = sz / 2, r = sz * 0.085;
+    function turb(t, s) { return Math.sin(t*.52+s)*.9 + Math.sin(t*.97+s*1.31)*.4; }
+    function flame(t, ox, w, h, stops, s) {
+      const wb = turb(t,s)*r*.045, wt = turb(t,s+1.57)*r*.07;
+      const by = cy+r*.38, ty = by-h, tx = cx+ox+wt, my = by-h*.52, mx = cx+ox+wb;
+      ctx.beginPath();
+      ctx.moveTo(cx-w+ox+wb, by);
+      ctx.quadraticCurveTo(mx-w*.5, my, tx, ty);
+      ctx.quadraticCurveTo(mx+w*.5, my, cx+w+ox+wb, by);
+      ctx.closePath();
+      const g = ctx.createLinearGradient(cx+ox, by, tx, ty);
+      stops.forEach(([sp,c]) => g.addColorStop(sp, c));
+      ctx.fillStyle = g; ctx.fill();
+    }
+    function frame() {
+      ctx.clearRect(0,0,sz,sz);
+      const t = performance.now()/1000;
+      flame(t,0,r*.28,r*1.3,  [[0,'rgba(180,55,0,.32)'],[.55,'rgba(220,90,10,.16)'],[1,'rgba(255,140,20,0)']],0);
+      flame(t,0,r*.17,r*.92,  [[0,'rgba(255,140,20,.40)'],[.45,'rgba(255,180,40,.22)'],[1,'rgba(255,220,80,0)']],0.9);
+      flame(t,0,r*.09,r*.62,  [[0,'rgba(255,210,90,.48)'],[.50,'rgba(255,190,55,.22)'],[1,'rgba(255,240,160,0)']],2.1);
+      const grd = ctx.createRadialGradient(cx,cy+r*.1,r*.2,cx,cy,r*3.2);
+      grd.addColorStop(0,'rgba(255,80,15,0.022)'); grd.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.fillStyle=grd; ctx.fillRect(0,0,sz,sz);
+      arrivalFireRAF = requestAnimationFrame(frame);
+    }
+    frame();
   }
 
 
