@@ -92,14 +92,6 @@
       56%  { transform: scale(1);    }
       100% { transform: scale(1);    }
     }
-    @keyframes notif-glow {
-      0%, 100% { box-shadow: 0 0 8px 3px rgba(255,200,80,.28); }
-      50%       { box-shadow: 0 0 16px 6px rgba(255,200,80,.55); }
-    }
-    @keyframes chakra-notif {
-      0%, 100% { box-shadow: 0 0 18px 6px rgba(255,200,80,.22); }
-      50%       { box-shadow: 0 0 28px 12px rgba(255,200,80,.48); }
-    }
 
     /* ── FIRE LOGS (home screen) ────────────────────────────────────── */
     #fire-logs {
@@ -713,7 +705,7 @@
       const isInvite = log.type === 'invite';
       const isCircle = log.type === 'circle';
       const hasN     = hasUnread(log.type);
-      dot.style.cssText = `width:${dotSize}px;height:${dotSize}px;display:flex;align-items:center;justify-content:center;font-size:${dotSize * (isInvite ? 0.34 : 0.42)}px;${isInvite ? 'border-color:rgba(196,160,255,.3);color:rgba(196,160,255,.7);' : ''}${isCircle ? 'border-color:rgba(80,180,255,.28);color:rgba(80,180,255,.65);' : ''}${hasN ? 'animation:notif-glow 2.2s ease-in-out infinite;border-color:rgba(255,200,80,.45);' : ''}`;
+      dot.style.cssText = `width:${dotSize}px;height:${dotSize}px;display:flex;align-items:center;justify-content:center;font-size:${dotSize * (isInvite ? 0.34 : 0.42)}px;${isInvite ? 'border-color:rgba(196,160,255,.3);color:rgba(196,160,255,.7);' : ''}${isCircle ? 'border-color:rgba(80,180,255,.28);color:rgba(80,180,255,.65);' : ''}`;
       dot.textContent = log.icon;
 
       const lbl = document.createElement('div');
@@ -1771,11 +1763,10 @@
         transform:translate(-50%,-50%);
         width:${d}px;height:${d}px;border-radius:50%;
         background:rgba(2,8,3,.94);
-        border:1px solid ${chHasNotif ? 'rgba(255,210,80,.55)' : ch.color + '44'};
+        border:1px solid ${ch.color}44;
         box-shadow:0 0 ${isHeart ? 26 : 14}px ${isHeart ? 10 : 4}px ${ch.glow};
         display:flex;align-items:center;justify-content:center;
-        cursor:pointer;z-index:2;
-        ${chHasNotif ? 'animation:chakra-notif 2.6s ease-in-out infinite;' : ''}`;
+        cursor:pointer;z-index:2;`;
 
       const dot = document.createElement('div');
       dot.style.cssText = `
